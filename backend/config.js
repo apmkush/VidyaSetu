@@ -9,21 +9,6 @@ connect.then(()=>{
     console.log("Database not connected");
 });
 
-// const contactSchema=new mongoose.Schema({
-//     name:{
-//         type:String,
-//         require:true
-//     },
-//     email:{
-//         type:String,
-//         require:true
-//     },
-//     phone:{
-//         type:String,
-//         require:true
-//     }
-// });
-
 const userSchema=new mongoose.Schema({
     name:{
         type:String,
@@ -43,7 +28,6 @@ const userSchema=new mongoose.Schema({
     },
 });
 
-const ContactModel=mongoose.model("Contact",contactSchema);
 const UserModel=mongoose.model("User",userSchema);
 
-export{ContactModel,UserModel};
+export{UserModel};

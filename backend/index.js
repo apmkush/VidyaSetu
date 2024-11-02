@@ -3,7 +3,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 // import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
-import { ContactModel,UserModel} from "./config.js";
+import {UserModel} from "./config.js";
 
 const app=express();
 app.use(cors());

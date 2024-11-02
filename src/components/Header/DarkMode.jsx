@@ -5,7 +5,7 @@ function Darkmode() {
 
   // Check for system preference and previously saved theme
   useEffect(() => {
-    const darkModePreference =
+    const darkModePreference =  
       localStorage.getItem('theme') === 'dark' ||
       window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(darkModePreference);
@@ -28,7 +28,7 @@ function Darkmode() {
   return (
     <button
       onClick={toggleDarkMode}
-      className="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded focus:outline-none"
+      className="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded focus:outline-none "
       aria-label="Toggle Dark Mode"
     >
       {isDarkMode ? (

@@ -45,8 +45,8 @@ app.post("/sendLogin",async(req,res)=>{
     const data={
         email:req.body.email,
         password:req.body.password,
-        otp:req.body.otp,
     };
+    console.log(data);
     try{
         const check = await UserModel.findOne({email:req.body.email});
         

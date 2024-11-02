@@ -35,7 +35,7 @@ function Navbar() {
         {/* Right Side - Dark Mode Toggle & Auth Options */}
         <div className="flex items-center space-x-4">
           <Darkmode />
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md">Login</button>
+          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md" to = ''>Login</button>
           <button className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors duration-200 shadow-md">Signup</button>
         </div>
       </div>

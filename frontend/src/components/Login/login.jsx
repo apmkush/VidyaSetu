@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import './styles/tailwind.css'; // Import Tailwind if not included globally in your project
+import './../../index.css'; // Import Tailwind if not included globally in your project
 
 const login = () => {
     const [email, setEmail] = useState('');

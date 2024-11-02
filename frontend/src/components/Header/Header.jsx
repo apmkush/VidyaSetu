@@ -11,7 +11,7 @@ function Navbar() {
         {/* Brand Logo and Name */}
         <div className="flex items-center space-x-3">
           <img src={LogoImage} alt="VidyaSetu Logo" className="h-11 w-13" />
-          <link to="/Home" className="text-2xl font-bold text-gray-800 dark:text-gray-200">VidyaSetu</link>
+          <span className="text-2xl font-bold text-gray-800 dark:text-gray-200">VidyaSetu</span>
         </div>
 
         {/* Navigation Links */}

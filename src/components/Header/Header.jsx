@@ -10,8 +10,8 @@ function Navbar() {
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Brand Logo and Name */}
         <div className="flex items-center space-x-3">
-          <img src={LogoImage} alt="VidyaSetu Logo" className="h-10 w-10" />
-          <span className="text-2xl font-bold text-gray-800 dark:text-gray-200">StudyPal</span>
+          <img src={LogoImage} alt="VidyaSetu Logo" className="h-11 w-13" />
+          <span className="text-2xl font-bold text-gray-800 dark:text-gray-200">VidyaSetu</span>
         </div>
 
         {/* Navigation Links */}
@@ -36,8 +36,12 @@ function Navbar() {
         {/* Right Side - Dark Mode Toggle & Auth Options */}
         <div className="flex items-center space-x-4">
           <DarkMode />
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md">Login</button>
-          <button className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors duration-200 shadow-md">Signup</button>
+          <Link to="/login" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md">
+            Login
+          </Link>
+          <Link to="/signup" className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors duration-200 shadow-md">
+            Signup
+          </Link>
         </div>
       </div>
     </header>

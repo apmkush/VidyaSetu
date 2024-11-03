@@ -29,7 +29,7 @@ function Navbar() {
             <FaMedal className="mr-1" /> Achievements
           </Link>
           <Link to="/community" className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-            <FaUsers className="mr-1" /> Community
+            <FaUsers className="mr-1" /> Community  
           </Link>
         </nav>
 

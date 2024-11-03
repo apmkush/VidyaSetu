@@ -7,7 +7,7 @@ import Home from './components/Home/Home.jsx'
 import Leaderboard from './components/Leaderboard/Leaderboard.jsx'
 import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
-
+import Achievement from './components/Achievement/Achievement.jsx'
 
 // create a router
 const router = createBrowserRouter([
@@ -30,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: "Signup",
         element: <Signup />
+      },
+      {
+        path: "achievements",
+        element: <Achievement />
       }
     ]
   }

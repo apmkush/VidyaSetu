@@ -1,5 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
-import './../../index.css'; // Import Tailwind if not included globally in your project
+import axios, { Axios } from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css';
+import './../../index.css'; 
 
 const login = () => {
     const [email, setEmail] = useState('');
@@ -12,9 +16,57 @@ const login = () => {
     const loginTitleRef = useRef(null);
     const userEmailRef = useRef(null);
     
+    const navigate = useNavigate();
+    const [formInput,setFormInput]=useState({
+        email:"",
+        password:"",
+    });
+    const  DisplayMessage=(text)=>{
+        toast.success(text, {
+            position: "top-center",
+            autoClose: 3000, // Auto-close after 3 seconds
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            style: {marginTop: "10px" },
+        });
+    };
+    const handleInput=(event)=>{
+        const{name,value}=event.target;
+
+        let obj={[name]:value};
+        setFormInput((prev)=>({...prev,...obj}));
+    };
+    
     useEffect(() => {
         emailInputRef.current.focus();
     }, []);
+
+    const handleSubmit=async(e)=>{
+        e.preventDefault();
+        try{
+            const response=await axios.post('http://localhost:5000/sendLogin',formInput,{
+                headers:{
+                    'Content-Type':'application/json'
+                }
+            });
+            if(response.data.success){
+                DisplayMessage(response.data.message);
+            }else{
+                DisplayMessage(response.data.message);
+            }
+            console.log(response.data.message);
+            // setMessage(response.data.message);
+        }catch(e){
+            console.log(e);
+            DisplayMessage("An error has occured!!");
+        }
+        setTimeout(() => {
+            navigate('/');
+        }, 3000);
+    };
 
     const handleNextClick = (e) => {
         e.preventDefault();
@@ -54,8 +106,8 @@ const login = () => {
                                         type="text" 
                                         className="w-full px-4 py-2 text-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                         placeholder="Enter your email"
-                                        value={email} 
-                                        onChange={(e) => setEmail(e.target.value)} 
+                                        name="email"
+                                        onChange={handleInput} 
                                         ref={emailInputRef} 
                                         required 
                                     />
@@ -87,8 +139,8 @@ const login = () => {
                                         type={showPassword ? "text" : "password"} 
                                         className="w-full px-4 py-2 text-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                         placeholder="Enter your password"
-                                        value={password} 
-                                        onChange={(e) => setPassword(e.target.value)} 
+                                        name="password"
+                                        onChange={handleInput} 
                                         ref={passwordInputRef} 
                                         required 
                                     />
@@ -112,8 +164,10 @@ const login = () => {
                                     >
                                         Back
                                     </button>
+                                    <ToastContainer />
                                     <button 
                                         type="submit" 
+                                        onClick={handleSubmit}
                                         className="px-4 py-2 font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
                                     >
                                         Login

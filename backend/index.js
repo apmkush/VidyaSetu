@@ -3,7 +3,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 // import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
-import { ContactModel,UserModel} from "./config.js";
+import {UserModel} from "./config.js";
 
 const app=express();
 app.use(cors());
@@ -45,8 +45,8 @@ app.post("/sendLogin",async(req,res)=>{
     const data={
         email:req.body.email,
         password:req.body.password,
-        otp:req.body.otp,
     };
+    console.log(data);
     try{
         const check = await UserModel.findOne({email:req.body.email});
         

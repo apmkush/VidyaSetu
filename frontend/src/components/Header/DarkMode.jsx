@@ -8,7 +8,7 @@ function Darkmode() {
   useEffect(() => {
     const fetchUserTheme = async () => {
       try {
-        const response = await axios.get('/api/user/theme'); // Replace with your API endpoint
+        const response = await axios.get('/api/user/theme'); // Replace it with your API endpoint
         const userTheme = response.data.theme; // Assume the API returns { theme: 'dark' | 'light' }
         
         // Set the theme based on the backend response

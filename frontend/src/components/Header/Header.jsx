@@ -33,7 +33,7 @@ function Navbar() {
           </Link>
         </nav>
 
-        {/* Right Side - Dark Mode Toggle & Auth Options */}
+        {/* Right Side - Dark Mode Toggle & Auth Options are included */}
         <div className="flex items-center space-x-4">
           <DarkMode />
           <Link to="/login" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md">

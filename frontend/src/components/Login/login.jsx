@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import axios, { Axios } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify'; 
+import { GoogleOAuthProvider, GoogleLogin, googleLogout } from '@react-oauth/google';
 import 'react-toastify/dist/ReactToastify.css';
 import './../../index.css'; 
 
@@ -82,6 +83,18 @@ const login = () => {
         loginTitleRef.current.innerHTML = 'Login';
         userEmailRef.current.innerHTML = 'Please login to use the platform';
         emailInputRef.current.focus();
+    };
+
+    const handleLoginSuccess = (credentialResponse) => {
+        const token = credentialResponse.credential;
+        DisplayMessage("Login successfully!!");
+        // const decodedToken = decode (token); 
+        // console.log('Login Success:', decodedToken);
+    };
+
+    const handleLoginError = () => {
+        console.log('Login Failed');
+        DisplayMessage("Login Failed!!");
     };
 
     const toggleShowPassword = () => {
@@ -175,6 +188,17 @@ const login = () => {
                                 </div>
                             </div>
                         )}
+                        <GoogleOAuthProvider clientId="35549278582-op72jge9avqf17n7uohv38a1lq9jbse1.apps.googleusercontent.com">
+                            <div className="App">
+                                <h2>Login with Google</h2>
+                                <GoogleLogin
+                                    onSuccess={handleLoginSuccess}
+                                    onError={handleLoginError}
+                                    useOneTap
+                                />
+                                <button onClick={() => googleLogout()}>Logout</button>
+                            </div>
+                        </GoogleOAuthProvider>
                     </div>
                 </form>
             </div>

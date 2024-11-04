@@ -1,4 +1,7 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFacebook, faTwitter, faPinterest, faInstagram, faLinkedin } from '@fortawesome/free-brands-svg-icons';
+
 
 function Footer() {
   return (
@@ -8,26 +11,27 @@ function Footer() {
           {/* Footer Section 1 */}
           <div className="flex flex-col items-center">
               <h1 className="text-3xl font-bold text-white">VidyaSetu</h1>
-              <p className="text-sm text-gray-300 mt-1">Guiding Every Step to Success</p>
+              <p className="text-md text-gray-300 mt-1">Guiding Every Step to Success</p>
 
               <div className="mt-4">
-                <h4 className="text-white font-semibold text-lg mb-2">Social Media</h4>
+                <h4 className="text-white font-semibold text-xl mb-2">Social Media</h4>
                 <div className="flex space-x-2">
-                  <a href="/" className="text-white text-2xl"><i className="fab fa-facebook"></i></a>
-                  <a href="/" className="text-white text-2xl"><i className="fab fa-twitter"></i></a>
-                  <a href="/" className="text-white text-2xl"><i className="fab fa-pinterest"></i></a>
-                  <a href="/" className="text-white text-2xl"><i className="fab fa-instagram"></i></a>
-                  <a href="/" className="text-white text-2xl"><i className="fab fa-linkedin"></i></a>
+                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faFacebook} /></a>
+                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faTwitter} /></a>
+                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faPinterest} /></a>
+                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faInstagram} /></a>
+                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faLinkedin} /></a>
                 </div>
+
               </div>
             </div>
 
           {/* Footer Section 2 */}
           <div>
             <h4 className="font-semibold text-2xl mb-2 text-white">Company</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
+            <div className="grid grid-cols-2 gap-2 text-md text-gray-300">
               <ul className="space-y-2">
-                <li><a href="#" className="hover:underline hover:text-maroon">Home</a></li>
+                <li><a href="/" className="hover:underline hover:text-maroon ">Home</a></li>
                 <li><a href="#" className="hover:underline hover:text-maroon">About Us</a></li>
                 <li><a href="#" className="hover:underline hover:text-maroon">FAQ</a></li>
                 <li><a href="#" className="hover:underline hover:text-maroon">Privacy Policy</a></li>
@@ -46,7 +50,7 @@ function Footer() {
           {/* Footer Section 3 */}
           <div className="flex flex-col items-start">
             <h4 className="font-semibold text-2xl  text-white mb-4">Contact Us</h4>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               <strong>E-Mail:</strong> 
               <a href="mailto:birjesh.20225024@mnnit.ac.in" className="hover:underline ml-1 text-gray-300">
                 birjesh.20225024@mnnit.ac.in
@@ -58,11 +62,12 @@ function Footer() {
                 +91 8081955858
               </a>
             </p>
+            
            {/*<br></br>*/}
-            <p className="text-2sm text-white-400 mt-4">Get in touch through our social media channels or email.</p>
+            <p className="text-md text-white-400 mt-4">Get in touch through our social media channels or email.</p>
           </div>
         </div>
-        <div className="text-center mt-8 text-sm">&copy; 2024 VidyaSetu. All rights reserved.</div>
+        <div className="text-center mt-8 text-md ">&copy; 2024 VidyaSetu. All rights reserved.</div>
       </div>
     </footer>
   );

@@ -1,34 +1,51 @@
 import React, { useEffect, useState } from 'react';
+//import axios from 'axios'; // Import axios or any other library you use for API requests
 
 function Darkmode() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Check for system preference and previously saved theme
+  // Fetch user's theme preference from the backend when the component mounts
   useEffect(() => {
-    const darkModePreference =  
-      localStorage.getItem('theme') === 'dark' ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(darkModePreference);
-    if (darkModePreference) {
-      document.documentElement.classList.add('dark');
-    }
+    const fetchUserTheme = async () => {
+      try {
+        const response = await axios.get('/api/user/theme'); // Replace it with your API endpoint
+        const userTheme = response.data.theme; // Assume the API returns { theme: 'dark' | 'light' }
+        
+        // Set the theme based on the backend response
+        if (userTheme === 'dark') {
+          setIsDarkMode(true);
+          document.documentElement.classList.add('dark');
+        } else {
+          setIsDarkMode(false);
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (error) {
+        console.error('Error fetching user theme:', error);
+      }
+    };
+
+    fetchUserTheme();
   }, []);
 
-  const toggleDarkMode = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
+  const toggleDarkMode = async () => {
+    const newTheme = !isDarkMode ? 'dark' : 'light'; // Toggle the theme
+
+    // Update the theme in the document and in state
     setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+
+    // Save the new theme to the backend
+    try {
+      await axios.post('/api/user/theme', { theme: newTheme }); // Replace with your API endpoint
+    } catch (error) {
+      console.error('Error saving user theme:', error);
+    }
   };
 
   return (
     <button
       onClick={toggleDarkMode}
-      className="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded focus:outline-none "
+      className="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded focus:outline-none"
       aria-label="Toggle Dark Mode"
     >
       {isDarkMode ? (

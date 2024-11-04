@@ -1,6 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios, { Axios } from 'axios';
 
-const Leaderboard = ({ leaderboardData = [] }) => {
+
+
+
+const Leaderboard = () => {
+  const [leaderboardData, setLeaderboardData] = useState([]); // State to hold leaderboard data
+  const [loading, setLoading] = useState(true); // State to manage loading state
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/getPoints");
+        setLeaderboardData(res.data); // Set the fetched data to state
+        console.log("Data received successfully");
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false); // Set loading to false once data is fetched
+      }
+    };
+
+    fetchData();
+  }, []); // Empty dependency array means this runs once when the component mounts
+
+  if (loading) {
+    return <div>Loading...</div>; 
+  }
+
   const isEmpty = leaderboardData.length === 0;
 
   return (
@@ -13,7 +40,7 @@ const Leaderboard = ({ leaderboardData = [] }) => {
             <tr className="bg-blue-600 text-white">
               <th className="py-3 px-6 text-left text-sm font-semibold">Rank</th>
               <th className="py-3 px-6 text-left text-sm font-semibold">Student Name</th>
-              <th className="py-3 px-6 text-left text-sm font-semibold">Course</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold">RegNo</th>
               <th className="py-3 px-6 text-left text-sm font-semibold">Aura Points</th>
               <th className="py-3 px-6 text-left text-sm font-semibold">Achievements</th>
             </tr>
@@ -32,7 +59,7 @@ const Leaderboard = ({ leaderboardData = [] }) => {
                   <tr key={student.id} className="border-b border-gray-200 hover:bg-gray-100">
                     <td className="py-3 px-6 text-sm font-medium text-gray-700">{index + 1}</td>
                     <td className="py-3 px-6 text-sm font-medium text-gray-900">{student.name}</td>
-                    <td className="py-3 px-6 text-sm text-gray-700">{student.course}</td>
+                    <td className="py-3 px-6 text-sm text-gray-700">{student.regno}</td>
                     <td className="py-3 px-6 text-sm text-gray-700">{student.auraPoints}</td>
                     <td className="py-3 px-6 text-sm">
                       <div className="flex flex-wrap gap-2">

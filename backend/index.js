@@ -3,7 +3,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 // import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
-import {UserModel} from "./config.js";
+import {UserModel,PointModel} from "./config.js";
 
 const app=express();
 app.use(cors());
@@ -66,6 +66,21 @@ app.post("/sendLogin",async(req,res)=>{
         res.json({success:false,message:"wrong details"});
     }
     // console.log(data);
+})
+
+app.get("/getPoints",async(req,res)=>{
+
+    try{
+        const leaderboardData = await PointModel.find({}); 
+        console.log(leaderboardData); 
+        return res.json(leaderboardData); //returning leaderboardData;
+    }
+    catch(error){
+        console.log(error);
+    }
+//     finally {
+//     mongoose.connection.close(); 
+//   }
 })
 
 app.listen(5000,()=>{

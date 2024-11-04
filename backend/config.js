@@ -28,6 +28,28 @@ const userSchema=new mongoose.Schema({
     },
 });
 
-const UserModel=mongoose.model("User",userSchema);
+const pointsSchema=new mongoose.Schema({
+    name:{
+        type:String,
+        require:true
+    },
+    regno:{
+        type:Number,
+        require:true,
+        min:0
+    },
+    auraPoints:{
+        type:Number,
+        require:true,
+        min:0
+    },
+    achievements:{
+        type: [String],
+        require:true
+    },
+})
 
-export{UserModel};
+const UserModel=mongoose.model("User",userSchema);
+const PointModel=mongoose.model("Score",pointsSchema);
+
+export{UserModel,PointModel};

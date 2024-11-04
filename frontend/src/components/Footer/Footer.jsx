@@ -37,7 +37,7 @@ function Footer() {
                 <li><a href="#" className="hover:underline hover:text-maroon">Your Timetable</a></li>
                 <li><a href="#" className="hover:underline hover:text-maroon">Account Deletion</a></li>
                 <li><a href="#" className="hover:underline hover:text-maroon">PYQ for 1st Year</a></li>
-                <li><a href="#" className="hover:underline hover:text-maroon">PYQ for >= 2nd Year</a></li>
+                <li><a href="#" className="hover:underline hover:text-maroon">PYQ for 2nd++ Year</a></li>
               </ul>
             </div>
           </div>

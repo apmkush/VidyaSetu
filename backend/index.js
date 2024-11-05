@@ -83,6 +83,23 @@ app.get("/getPoints",async(req,res)=>{
 //   }
 })
 
+app.put("/addPoints",async(req,res)=>{
+    const { regno, newPoints } = req.body;
+
+    try{
+        const userdata = await PointModel.findOneAndUpdate(
+            { regno: regno},              
+            { $inc: { auraPoints:newPoints } }, 
+            { new: true }                   
+          );
+        console.log(userdata);
+        res.json({success:true,message:"Points added successfully!!"});
+    }catch(e){
+        console.log(e);
+        res.json({success:false,message:"Something went wrong!!"});
+    }
+})
+
 app.listen(5000,()=>{
     console.log("app is running");
 })

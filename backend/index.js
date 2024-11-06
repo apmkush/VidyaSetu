@@ -1,4 +1,5 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import cors from "cors";
 import bcrypt from "bcrypt";
 // import nodemailer from "nodemailer";
@@ -32,8 +33,9 @@ app.post("/sendSingup",async(req,res)=>{
             const hashedPassword = await bcrypt.hash(data.password,saltRounds);
             data.password = hashedPassword;
             const userdata = await UserModel.insertMany(data);
+            const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
             console.log(userdata);
-            res.json({success:true,message:"Singup successful!!"});
+            res.json({success:true,message:"Singup successful!!",token:token});
         }
     }catch(e){
         console.log(e);

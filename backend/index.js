@@ -3,7 +3,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 // import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
-import {UserModel,PointModel} from "./config.js";
+import {UserModel} from "./config.js";
 
 const app=express();
 app.use(cors());
@@ -18,6 +18,7 @@ app.post("/sendSingup",async(req,res)=>{
         phone:req.body.tel,
         password:req.body.password,
         confirm_password:req.body.confirm_password,
+        regno:req.body.regno,
     };
     try{
         const existingUser = await UserModel.findOne({email: data.email});
@@ -71,7 +72,7 @@ app.post("/sendLogin",async(req,res)=>{
 app.get("/getPoints",async(req,res)=>{
 
     try{
-        const leaderboardData = await PointModel.find({}); 
+        const leaderboardData = await UserModel.find({}).select("name regno auraPoints achievements"); 
         console.log(leaderboardData); 
         return res.json(leaderboardData); //returning leaderboardData;
     }
@@ -87,7 +88,7 @@ app.put("/addPoints",async(req,res)=>{
     const { regno, newPoints } = req.body;
 
     try{
-        const userdata = await PointModel.findOneAndUpdate(
+        const userdata = await UserModel.findOneAndUpdate(
             { regno: regno},              
             { $inc: { auraPoints:newPoints } }, 
             { new: true }                   

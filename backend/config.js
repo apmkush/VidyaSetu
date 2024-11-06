@@ -26,13 +26,6 @@ const userSchema=new mongoose.Schema({
         type: String,
         required: true
     },
-});
-
-const pointsSchema=new mongoose.Schema({
-    name:{
-        type:String,
-        require:true
-    },
     regno:{
         type:Number,
         require:true,
@@ -40,16 +33,39 @@ const pointsSchema=new mongoose.Schema({
     },
     auraPoints:{
         type:Number,
-        require:true,
-        min:0
+        default:0,
     },
     achievements:{
         type: [String],
-        require:true
     },
-})
+    dark:{
+        type:Boolean,
+        default:false,
+    },
+});
+
+// const pointsSchema=new mongoose.Schema({
+//     name:{
+//         type:String,
+//         require:true
+//     },
+//     regno:{
+//         type:Number,
+//         require:true,
+//         min:0
+//     },
+//     auraPoints:{
+//         type:Number,
+//         require:true,
+//         min:0
+//     },
+//     achievements:{
+//         type: [String],
+//         require:true
+//     },
+// })
 
 const UserModel=mongoose.model("User",userSchema);
-const PointModel=mongoose.model("Score",pointsSchema);
+// const PointModel=mongoose.model("Score",pointsSchema);
 
-export{UserModel,PointModel};
+export{UserModel};

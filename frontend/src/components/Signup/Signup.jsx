@@ -13,6 +13,7 @@ const Signup = () => {
       tel:"",
       password:"",
       confirm_password:"",
+      regno:"",
   });
 
   
@@ -91,11 +92,22 @@ const Signup = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Tel</label>
             <input
-              type="text"
+              type="number"
               name="tel"
               onChange={handleInput}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your mobile number"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Reg no</label>
+            <input
+              type="number"
+              name="regno"
+              onChange={handleInput}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your reg no"
               required
             />
           </div>

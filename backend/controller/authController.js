@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
-import User from "../models/user.js";
+import { validationResult } from "express-validator";
+// import nodemailer from "nodemailer";
+import {UserModel} from "../models/user.js";
 import { generateToken, verifyToken, generateTempToken } from "../config/secret.js";
 
 export const login = async (req, res) => {
@@ -8,6 +9,10 @@ export const login = async (req, res) => {
         email:req.body.email,
         password:req.body.password,
     };
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.json({ errors: errors.array() });
+    }
     console.log(data);
     try{
         const check = await UserModel.findOne({email:req.body.email});
@@ -51,9 +56,10 @@ export const signup = async (req, res) => {
             const hashedPassword = await bcrypt.hash(data.password,saltRounds);
             data.password = hashedPassword;
             const userdata = await UserModel.insertMany(data);
-            const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+            // const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
             console.log(userdata);
-            res.json({success:true,message:"Singup successful!!",token:token});
+            const authToken = generateToken(userdata.id);
+            res.json({success:true,message:"Singup successful!!",token:authToken});
         }
     }catch(e){
         console.log(e);

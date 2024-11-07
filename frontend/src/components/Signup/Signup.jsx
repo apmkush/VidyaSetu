@@ -31,7 +31,7 @@ const Signup = () => {
         toast.error("Please fill all credentials");
     }
     else try{
-        const response=await axios.post('http://localhost:5000/sendSingup',formInput,{
+        const response=await axios.post('http://localhost:5000/singup',formInput,{
             headers:{
                 'Content-Type':'application/json'
             }

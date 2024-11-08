@@ -72,6 +72,7 @@ const Achievement = ({ userId }) => {
   };
 
   // Graph Data for Aura Points History
+  // const auraPointsHistory = [10, 25, 40, 60, 75, 90, 110, 130, 150, 170];
   const chartData = {
     labels: Array.from({ length: auraPointsHistory.length }, (_, i) => `Achievement ${i + 1}`),
     datasets: [

@@ -4,8 +4,8 @@ import axios from 'axios';
 function Darkmode() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Fetch user's theme preference from the backend when the component mounts
-  useEffect(() => {
+  
+  useEffect(() => {  // Fetch user's theme preference from the backend when the component mounts
     const fetchUserTheme = async () => {
       try {
         const response = await axios.get('/api/user/theme'); // Replace it with your API endpoint

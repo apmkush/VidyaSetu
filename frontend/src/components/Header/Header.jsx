@@ -5,12 +5,10 @@ import DarkMode from './DarkMode';
 import LogoImage from './logo.jpeg';
 
 function Navbar() {
-  // State for tracking open dropdowns to be toggled and closed. (this is important for mobile view)
-  const [openDropdown, setOpenDropdown] = useState(null);
-  // State for tracking login status by checking sessionStorage or backend
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    // Check sessionStorage for login status initially and set state
-    const savedStatus = sessionStorage.getItem('isLoggedIn');
+  const [openDropdown, setOpenDropdown] = useState(null);// State for tracking open dropdowns to be toggled and closed. (this is important for mobile view)
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {// State for tracking login status by checking sessionStorage or backend
+    const savedStatus = sessionStorage.getItem('isLoggedIn');// Check sessionStorage for login status initially and set state
     return savedStatus === 'true';
   });
 

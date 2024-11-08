@@ -9,6 +9,8 @@ import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import Achievement from './components/Achievement/Achievement.jsx'
 
+const userId = "672cf85cfa2cadcd25bee67d";
+
 // create a router
 const router = createBrowserRouter([
   {
@@ -33,7 +35,7 @@ const router = createBrowserRouter([
       },
       {
         path: "achievements",
-        element: <Achievement />
+        element: <Achievement userId={userId} />
       }
     ]
   }

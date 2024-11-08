@@ -5,10 +5,13 @@ import { ToastContainer, toast } from 'react-toastify';
 import { GoogleOAuthProvider, GoogleLogin, googleLogout } from '@react-oauth/google';
 import 'react-toastify/dist/ReactToastify.css';
 import './../../index.css'; 
+// import { set } from "mongoose";
 
 const login = () => {
     const [email, setEmail] = useState('');
+    const [otp, setotp] = useState('');
     const [password, setPassword] = useState('');
+    const [isForgotEmail, setIsForgotEmail] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isPasswordPage, setIsPasswordPage] = useState(false);
 
@@ -24,7 +27,7 @@ const login = () => {
     });
     const  DisplayMessage=(text)=>{
         toast.success(text, {
-            position: "top-center",
+            position: "centre-top",
             autoClose: 3000, // Auto-close after 3 seconds
             hideProgressBar: false,
             closeOnClick: true,
@@ -42,7 +45,9 @@ const login = () => {
     };
     
     useEffect(() => {
-        emailInputRef.current.focus();
+        if (emailInputRef.current) {
+            emailInputRef.current.focus();
+        }
     }, []);
 
     const handleSubmit=async(e)=>{
@@ -101,10 +106,83 @@ const login = () => {
         setShowPassword(!showPassword);
     };
 
+    const sendotp=async(e)=>{
+        e.preventDefault();
+        console.log(formInput.email)
+        try{
+            const response=await axios.post('http://localhost:5000/send-otp',formInput,{
+                headers:{
+                    'Content-Type':'application/json'
+                }
+            });
+            if(response.data.success){
+                DisplayMessage(response.data.message);
+            }else{
+                DisplayMessage(response.data.message);
+            }
+            console.log(response.data.message);
+            // setMessage(response.data.message);
+        }catch(e){
+            console.log(e);
+            DisplayMessage("An error has occured!!");
+        }
+        setIsForgotEmail(true);
+    }
+    const verifyotp =async (e) => {
+        e.preventDefault();
+        try{
+            const response=await axios.post('http://localhost:5000/verify-otp',{email,otp},{
+                headers:{
+                    'Content-Type':'application/json'
+                }
+            });
+            if(response.data.success){
+                DisplayMessage(response.data.message);
+            }else{
+                DisplayMessage(response.data.message);
+            }
+            console.log(response.data.message);
+            // setMessage(response.data.message);
+        }catch(e){
+            console.log(e);
+            DisplayMessage("An error has occured!!");
+        }
+      };
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <ToastContainer />
             <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
                 <form>
+                    {/* Forgot Email Page */}
+                    {isForgotEmail ? (
+                    <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Forgot Email</h2>
+                    <p className="text-gray-500 text-center mb-6">Enter otp sent to your email</p>
+                    <input
+                        type="Number"
+                        className="w-full px-4 py-2 text-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter OTP sent"
+                        name="phoneNumber"
+                        value={otp}
+                        onChange={(event) => setotp(event.target.value)}
+                        required
+                    />
+                    <button
+                        onClick={verifyotp}
+                        className="w-full px-4 py-2 font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
+                    >
+                        Submit OTP
+                    </button>
+                    <button
+                        onClick={() => setIsForgotEmail(false)}
+                        className="w-full px-4 py-2 font-semibold text-gray-500 mt-2"
+                    >
+                        Back to Login
+                    </button>
+                    {/* {message && <p className="mt-4 text-center text-green-500">{message}</p>} */}
+                    </div>
+                ) : (
                     <div className={`transition-all duration-500 ${isPasswordPage ? 'transform scale-105' : ''}`}>
                         <div className="mb-6 text-center">
                             <h2 className="text-2xl font-semibold text-gray-800" ref={loginTitleRef}>Login</h2>
@@ -126,7 +204,8 @@ const login = () => {
                                     />
                                 </div>
                                 <div className="text-right">
-                                    <a href="#" className="text-sm text-blue-500 hover:underline">Forgot email?</a>
+                                    {/* <a href="#" className="text-sm text-blue-500 hover:underline">Forgot email?</a> */}
+                                    
                                 </div>
                                 <div className="text-gray-500 text-sm text-center">
                                     <p>Not your computer? Use guest mode to log in privately.</p>
@@ -159,7 +238,13 @@ const login = () => {
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <a href="#" className="text-sm text-blue-500 hover:underline">Forgot password?</a>
+                                    {/* <a href="#" className="text-sm text-blue-500 hover:underline">Forgot password?</a> */}
+                                    <button
+                                        className="text-sm text-blue-500 hover:underline"
+                                        onClick={sendotp}
+                                        >
+                                        Forgot password?
+                                    </button>
                                     <label className="flex items-center text-sm">
                                         <input 
                                             type="checkbox" 
@@ -177,7 +262,6 @@ const login = () => {
                                     >
                                         Back
                                     </button>
-                                    <ToastContainer />
                                     <button 
                                         type="submit" 
                                         onClick={handleSubmit}
@@ -200,6 +284,7 @@ const login = () => {
                             </div>
                         </GoogleOAuthProvider>
                     </div>
+                )}
                 </form>
             </div>
         </div>

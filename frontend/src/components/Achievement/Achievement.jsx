@@ -6,6 +6,9 @@ import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
+
+const userId = "672cf85cfa2cadcd25bee67d";
+
 const Achievement = ({ userId }) => {
   const [achievements, setAchievements] = useState([]);
   const [auraPointsHistory, setAuraPointsHistory] = useState([]);
@@ -14,9 +17,9 @@ const Achievement = ({ userId }) => {
     auraPoints:'',
   });
 
-  // useEffect(() => {
-  //   fetchAchievements();
-  // }, []);
+  useEffect(() => {
+    fetchAchievements();
+  }, []);
 
   const  DisplayMessage=(text)=>{
     toast.success(text, {
@@ -31,16 +34,21 @@ const Achievement = ({ userId }) => {
     });
 };
 
-  // const fetchAchievements = async () => {
-  //   try {
-  //     const response = await fetch(`/api/achievements/${userId}`);
-  //     const data = await response.json();
-  //     setAchievements(data.achievements);
-  //     setAuraPointsHistory(data.auraPointsHistory);
-  //   } catch (error) {
-  //     console.error('Failed to fetch achievements:', error);
-  //   }
-  // };
+  const fetchAchievements = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/achievements/${userId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // console.log(typeof data);
+      const dataArray = Object.values(data.auraPointsHistory);
+      setAuraPointsHistory(dataArray);
+      console.log(data.auraPointsHistory);
+    } catch (error) {
+      console.log('Failed to fetch achievements:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,25 +79,29 @@ const Achievement = ({ userId }) => {
   }
   };
 
-  // Graph Data for Aura Points History
-  // const auraPointsHistory = [10, 25, 40, 60, 75, 90, 110, 130, 150, 170];
-  const chartData = {
-    labels: Array.from({ length: auraPointsHistory.length }, (_, i) => `Achievement ${i + 1}`),
-    datasets: [
-      {
-        label: 'Aura Points',
-        data: auraPointsHistory,
-        fill: false,
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
-      },
-    ],
-  };
+// Generate the chart data
+const chartData = {
+  labels:auraPointsHistory && auraPointsHistory.map((entry) => {
+    const date = new Date(entry.date);
+    return date.toLocaleDateString(); // Format the date as 'MM/DD/YYYY' or adjust as needed
+  }),
+  datasets: [
+    {
+      label: 'Aura Points',
+      data: auraPointsHistory.map((entry) => entry.points), // Use only points
+      fill: false,
+      backgroundColor: '#3b82f6',
+      borderColor: '#3b82f6',
+    },
+  ],
+};
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-  };
+// Chart options
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+};
+
 
   return (
     <div className="container mx-auto p-8">

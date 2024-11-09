@@ -8,6 +8,9 @@ import Leaderboard from './components/Leaderboard/Leaderboard.jsx'
 import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import Achievement from './components/Achievement/Achievement.jsx'
+import ActivityCalendar from './components/Planner/planner.jsx'
+
+const userId = "672cf85cfa2cadcd25bee67d";
 import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
 import Setting from './components/Setting.jsx/Setting.jsx'
 import Deadline from './components/Planner/Deadline.jsx'
@@ -36,7 +39,11 @@ const router = createBrowserRouter([
       },
       {
         path: "achievements",
-        element: <Achievement />
+        element: <Achievement userId={userId} />
+      },
+      {
+        path: "planner",
+        element: <ActivityCalendar />
       },
       {
         path: "Personalinfo",

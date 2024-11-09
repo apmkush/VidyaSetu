@@ -27,4 +27,4 @@ const auraPointsSchema = new Schema({
 
 const PointsHistory = model('PointsHistory', auraPointsSchema);
 
-export default PointsHistory;
+export {PointsHistory};

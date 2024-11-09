@@ -41,7 +41,7 @@ function Navbar() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-lg py-4">
+    <header className="bg-gradient-to-r from-[#FFDCAB] to-[#AB6B2E]' dark:bg-gray-800 shadow-lg py-4">
       <div className="container mx-auto px-4 flex flex-wrap items-center justify-between">
         
         {/* Brand Logo and Name */}

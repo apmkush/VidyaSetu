@@ -1,4 +1,4 @@
-#root {
+/* #root {
     max-width: 1280px;
     margin: 0 auto;
     padding: 2rem;
@@ -42,22 +42,21 @@
   }
   
   /* App.css */
-.react-calendar-heatmap .bg-gray-200 {
+/* .react-calendar-heatmap .bg-gray-200 {
   fill: #e5e7eb; /* Tailwind gray-200 */
-}
+ 
 
-.react-calendar-heatmap .bg-green-100 {
+/* .react-calendar-heatmap .bg-green-100 {
   fill: #a7f3d0; /* Tailwind green-100 */
-}
 
-.react-calendar-heatmap .bg-green-300 {
-  fill: #6ee7b7; /* Tailwind green-300 */
-}
+/* .react-calendar-heatmap .bg-green-300 {
+  fill: #6ee7b7; Tailwind green-300 */
 
-.react-calendar-heatmap .bg-green-500 {
+
+/* .react-calendar-heatmap .bg-green-500 {
   fill: #10b981; /* Tailwind green-500 */
-}
+ 
 
-.react-calendar-heatmap .bg-green-700 {
+/* .react-calendar-heatmap .bg-green-700 {
   fill: #047857; /* Tailwind green-700 */
-}
+ 

@@ -8,6 +8,7 @@ import Leaderboard from './components/Leaderboard/Leaderboard.jsx'
 import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import Achievement from './components/Achievement/Achievement.jsx'
+import ActivityCalendar from './components/Planner/planner.jsx'
 
 const userId = "672cf85cfa2cadcd25bee67d";
 
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
       {
         path: "achievements",
         element: <Achievement userId={userId} />
+      },
+      {
+        path: "planner",
+        element: <ActivityCalendar />
       }
     ]
   }

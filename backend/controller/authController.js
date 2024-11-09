@@ -86,15 +86,15 @@ var transporter = nodemailer.createTransport({
   const otpStore = new Map();
 
   const generateOTP = (email) => {
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const OTP = Math.floor(100000 + Math.random() * 900000);
     // Set expiration time for OTP (e.g., 5 minutes)
     const expirationTime = Date.now() + 5 * 60 * 1000;
 
     // Store OTP with email as key and an object for OTP and expiration
-    otpStore.set(email, { otp, expirationTime });
+    otpStore.set(email, { OTP, expirationTime });
 
-    console.log(`Generated OTP for ${email}: ${otp}`);
-    return otp;
+    console.log(`Generated OTP for ${email}: ${OTP} (Expires at: ${new Date(expirationTime).toLocaleString()})`);
+    return OTP;
   };
 
   export const sendotp = async (req, res) => {
@@ -162,25 +162,51 @@ var transporter = nodemailer.createTransport({
   };
 
 export const verifyotp=async (req, res) => {
-    const { email, enteredOtp } = req.body;
-    const otpData = otpStore.get(email);
+    try{
+      const { email, otp } = req.body;
+      const otpData = otpStore.get(email);
 
-    if (!otpData) {
-        return { success: false, message: "OTP not found or expired" };
+      if (!otpData) {
+          return res.json({ success: false, message: "OTP not found or expired" });
+      }
+      const { OTP, expirationTime } = otpData;
+
+      // Check if the OTP has expired
+      if (!expirationTime || Date.now() > new Date(expirationTime)) {
+          otpStore.delete(email);  // Remove expired OTP
+          console.log("OTP has expired");
+          return res.json({ success: false, message: "OTP has expired" });
+      }
+      
+      if (otp == OTP.toString()) {
+          otpStore.delete(email);  // Remove OTP after successful verification
+          console.log("OTP verified successfully");
+          return res.json({ success: true, message: "OTP verified successfully" });
+      }
+    }catch(e){
+      console.log(e);
+      return res.json({ success: false, message: "Invalid OTP" });
     }
-
-    const { otp, expirationTime } = otpData;
-
-    // Check if the OTP has expired
-    if (Date.now() > expirationTime) {
-        otpStore.delete(email);  // Remove expired OTP
-        return { success: false, message: "OTP has expired" };
-    }
-
-    // Check if the entered OTP matches
-    if (otp === enteredOtp) {
-        otpStore.delete(email);  // Remove OTP after successful verification
-        return { success: true, message: "OTP verified successfully" };
-    }
-    return { success: false, message: "Invalid OTP" };
 }
+
+export const resetPassword = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+  
+      // Find the user by email
+      const user = await UserModel.findOne({ email });
+
+      // Hash the new password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+      // Update the user's password
+      user.password = hashedPassword;
+      await user.save();
+  
+      return res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.log(error);
+      return res.json({ message: "Internal server error" });
+    }
+  };

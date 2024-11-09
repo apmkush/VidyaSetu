@@ -1,7 +1,7 @@
 import { Router } from "express";
 const router = Router();
 import { body } from "express-validator";
-import { login, signup, verifyotp, sendotp } from "../controller/authController.js";
+import { login, signup, verifyotp, sendotp, resetPassword } from "../controller/authController.js";
 import cors from "cors";
 
 router.use(cors());
@@ -19,6 +19,6 @@ router.post(
 router.post("/singup", signup);
 router.post("/verify-otp", verifyotp);
 router.post("/send-otp", sendotp);
-// router.get("/reset-password/:id/:token", resetPassword);
+router.post("/reset-password", resetPassword);
 
 export default router;

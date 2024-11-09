@@ -8,6 +8,9 @@ import Leaderboard from './components/Leaderboard/Leaderboard.jsx'
 import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import Achievement from './components/Achievement/Achievement.jsx'
+import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
+import Setting from './components/Setting.jsx/Setting.jsx'
+import Deadline from './components/Planner/Deadline.jsx'
 
 // create a router
 const router = createBrowserRouter([
@@ -34,6 +37,18 @@ const router = createBrowserRouter([
       {
         path: "achievements",
         element: <Achievement />
+      },
+      {
+        path: "Personalinfo",
+        element: <PersonalInfo />
+      },
+      {
+        path: "Setting",
+        element: <Setting />
+      },
+      {
+        path: "Deadline",
+        element: <Deadline />
       }
     ]
   }

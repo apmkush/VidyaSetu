@@ -84,7 +84,7 @@ function Navbar() {
             {openDropdown === 'planner' && (
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/planner/courses" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Courses</Link>
-                <Link to="/assignments" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Assignment Deadlines</Link>
+                <Link to="/Deadline" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Assignment Deadlines</Link>
                 <Link to="/planner/timetable" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Timetable</Link>
               </div>
             )}
@@ -137,8 +137,8 @@ function Navbar() {
             </div>
             {openDropdown === 'profile' && (
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
-                <Link to="/profile/info" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Personal Info</Link>
-                <Link to="/profile/settings" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Settings</Link>
+                <Link to="/Personalinfo" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Personal Info</Link>
+                <Link to="/Setting" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Settings</Link>
                 <Link to="/profile/goals" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Academic Goals</Link>
               </div>
             )}

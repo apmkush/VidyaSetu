@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
-import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
-const Planner = () => {
+const Deadline = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs().startOf('month'));
   const [assignments, setAssignments] = useState({});
   const [hoveredDate, setHoveredDate] = useState(null);
@@ -12,7 +11,6 @@ const Planner = () => {
   const daysInMonth = currentMonth.daysInMonth();
   const startDayOfWeek = currentMonth.day();
 
-  // Generates days for the calendar, including padding days for the start of the week
   const generateCalendarDays = () => {
     const days = [];
     for (let i = 0; i < startDayOfWeek; i++) {
@@ -32,12 +30,10 @@ const Planner = () => {
     return days;
   };
 
-  // Changes the month
   const handleMonthChange = (direction) => {
     setCurrentMonth(currentMonth.add(direction, 'month'));
   };
 
-  // Adds a new assignment to a specific date
   const addAssignment = () => {
     if (!newAssignment) return;
     const updatedAssignments = { ...assignments };
@@ -49,7 +45,6 @@ const Planner = () => {
     setNewAssignment('');
   };
 
-  // Toggles the completion status of an assignment
   const toggleAssignment = (date, id) => {
     const updatedAssignments = { ...assignments };
     const assignment = updatedAssignments[date].find(task => task.id === id);
@@ -59,19 +54,15 @@ const Planner = () => {
     setAssignments(updatedAssignments);
   };
 
-  // Deletes an assignment from a specific date
   const deleteAssignment = (date, id) => {
     const updatedAssignments = { ...assignments };
-    updatedAssignments[date] = updatedAssignments[date].filter(task => task.id !== id);
-    if (updatedAssignments[date].length === 0) delete updatedAssignments[date]; // Remove date if no tasks left
-    setAssignments(updatedAssignments);
+    updatedAssignments[date] = updatedAssignments[date].filter(task => task.id !== id); // Remove the task by ID
+    setAssignments(updatedAssignments); // Update the state with the new assignments
   };
-
-  // Get background color based on status
   const getBoxColor = (status) => {
-    if (status === 'completed') return 'bg-green-200';
-    if (status === 'pending') return 'bg-red-200';
-    return 'bg-gray-100';
+    if (status === 'completed') return 'bg-green-400';
+    if (status === 'pending') return 'bg-red-400';
+    return 'bg-gray-200';
   };
 
   return (
@@ -97,7 +88,7 @@ const Planner = () => {
 
       <div className="grid grid-cols-7 gap-4">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center font-semibold text-gray-700">
+          <div key={day} className="text-center font-bold text-gray-700">
             {day}
           </div>
         ))}
@@ -110,27 +101,33 @@ const Planner = () => {
             onClick={() => dayObj.day && setClickedDate(dayObj.date)}
           >
             {dayObj.day && (
-              <>
-                <div className="text-lg font-medium">{dayObj.day}</div>
-                {dayObj.assignments.length > 0 && (
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-white p-2 rounded shadow-lg z-10">
-                    <h4 className="text-sm font-semibold mb-1">Assignments</h4>
-                    <ul className="text-xs text-gray-700">
-                      {dayObj.assignments.map(task => (
-                        <li key={task.id} className={task.completed ? 'line-through' : ''}>
-                          {task.text}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
+              <div className="text-lg font-medium">{dayObj.day}</div>
+            )}
+            
+            {hoveredDate === dayObj.date && dayObj.assignments.length > 0 && (
+              <div className="absolute top-full left-0 mt-0.5 w-60 bg-purple-300 p-2 rounded shadow-lg z-10"
+              onClick={(e) => e.stopPropagation()} // Prevent click from propagating further
+              >
+                <h4 className="text-4sm font-semibold mb-1">Assignments</h4>
+                <ul className="text-2sm text-gray-700">
+                  {dayObj.assignments.map(task => (
+                    <li key={task.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleAssignment(dayObj.date, task.id)}
+                        className="mr-2"
+                      />
+                      <span className={task.completed ? 'line-through' : ''}>{task.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Modal for adding/editing assignments */}
       {clickedDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
@@ -182,4 +179,4 @@ const Planner = () => {
   );
 };
 
-export default Planner;
+export default Deadline;

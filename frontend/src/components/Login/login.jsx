@@ -158,10 +158,26 @@ const login = () => {
             DisplayMessage("Passwords do not match!", "error");
             return;
         }
-        // Backend integration for password reset goes here
-        // axios.post('http://localhost:5000/reset-password', { email, password })
-        DisplayMessage("Password has been reset successfully!");
-        navigate('/');
+        
+        try{
+            const response=await axios.post('http://localhost:5000/reset-password', { email, password },{
+                headers:{
+                    'Content-Type':'application/json'
+                }
+            });
+            if(response.data.success){
+                DisplayMessage(response.data.message);
+                setTimeout(() => {
+                    navigate('/');
+                }, 4000);
+            }else{
+                DisplayMessage(response.data.message, "error");
+            }
+            console.log(response.data.message);
+        }catch(e){
+            console.log(e);
+            DisplayMessage("An error has occured!!");
+        }
     };
 
     return (
@@ -179,7 +195,7 @@ const login = () => {
                                 className="w-full px-4 py-2 text-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter OTP"
                                 value={otp}
-                                onChange={(event) => setOtp(event.target.value)}
+                                onChange={(event) => setotp(event.target.value)}
                                 required
                             />
                             <button
@@ -243,7 +259,7 @@ const login = () => {
                                             className="w-full px-4 py-2 text-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="Enter your email"
                                             name="email"
-                                            onChange={handleInput}
+                                            onChange={(e) => {setEmail(e.target.value);handleInput(e)}}
                                             ref={emailInputRef}
                                             required
                                         />

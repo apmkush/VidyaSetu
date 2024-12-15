@@ -63,7 +63,7 @@ function Navbar() {
               <FaTachometerAlt className="mr-1" /> Dashboard
             </div>
             {openDropdown === 'dashboard' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
+              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/dashboard/overview" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Overview</Link>
                 <Link to="/dashboard/activities" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Recent Activities</Link>
                 <Link to="/growth" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Progress Tracking</Link>
@@ -82,7 +82,7 @@ function Navbar() {
               <FaCalendarAlt className="mr-1" /> Planner
             </div>
             {openDropdown === 'planner' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
+              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/planner/courses" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Courses</Link>
                 <Link to="/Deadline" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Assignment Deadlines</Link>
                 <Link to="/planner/timetable" className="block px-4 py-2 hover:bg-green-200 dark:hover:bg-green-600 rounded">Timetable</Link>
@@ -100,7 +100,7 @@ function Navbar() {
               <FaChartLine className="mr-1" /> Progress
             </div>
             {openDropdown === 'progress' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
+              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/progress/study" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Study Progress</Link>
                 <Link to="/progress/chapters" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Chapters</Link>
                 <Link to="/progress/achievements" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Achievements</Link>
@@ -118,7 +118,7 @@ function Navbar() {
               <FaGift className="mr-1" /> Rewards
             </div>
             {openDropdown === 'rewards' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
+              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/achievements" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Achievements</Link>
                 <Link to="/rewards/badges" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Badges</Link>
                 <Link to="/leaderboard" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Leaderboard</Link>
@@ -136,7 +136,7 @@ function Navbar() {
               <FaUser className="mr-1" /> Profile
             </div>
             {openDropdown === 'profile' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.5 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
+              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/Personalinfo" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Personal Info</Link>
                 <Link to="/Setting" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Settings</Link>
                 <Link to="/profile/goals" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Academic Goals</Link>

@@ -14,6 +14,8 @@ import Leaderboard from './components/Leaderboard/Leaderboard.jsx';
 import Login from './components/Login/Login.jsx';
 import Signup from './components/Signup/Signup.jsx';
 import Achievement from './components/Achievement/Achievement.jsx';
+import ActivityCalendar from './components/Planner/planner.jsx'
+import ChatBox from './components/chat.jsx'
 import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx';
 import Setting from './components/Setting.jsx/Setting.jsx';
 import Deadline from './components/Planner/Deadline.jsx';
@@ -28,19 +30,47 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { path: '/', element: <Home /> },
-      { path: 'Leaderboard', element: <Leaderboard /> },
-      { path: 'Login', element: <Login /> },
-      { path: 'Signup', element: <Signup /> },
-      { path: 'achievements', element: <Achievement userId={userId} /> },
-      { path: 'Personalinfo', element: <PersonalInfo /> },
-      { path: 'Setting', element: <Setting /> },
-      { path: 'Deadline', element: <Deadline /> },
-    ],
-  },
-]);
+      {
+        path: "/",
+        element: <Home />
+      },
+      {
+        path: "Leaderboard",
+        element: <Leaderboard />
+      },
+      { 
+        path: "Login",
+        element: <Login />
+      },
+      {
+        path: "Signup",
+        element: <Signup />
+      },
+      {
+        path: "achievements",
+        element: <Achievement userId={userId} />
+      }, 
+      {
+        path: "Personalinfo",
+        element: <PersonalInfo />
+      },
+      {
+        path: "Setting",
+        element: <Setting />
+      },
+      {
+        path: "Deadline",
+        element: <Deadline />
+      },
+      {
+        path: "chat",
+        element: <ChatBox />
+      }
 
-// Mount the app
+    ]
+  }
+])
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId="YOUR_CLIENT_ID">

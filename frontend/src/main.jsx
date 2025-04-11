@@ -9,6 +9,7 @@ import Login from './components/Login/login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import Achievement from './components/Achievement/Achievement.jsx'
 import ActivityCalendar from './components/Planner/planner.jsx'
+import ChatBox from './components/chat.jsx'
 
 const userId = "672cf85cfa2cadcd25bee67d";
 // import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
@@ -56,7 +57,12 @@ const router = createBrowserRouter([
       {
         path: "Deadline",
         element: <Deadline />
+      },
+      {
+        path: "chat",
+        element: <ChatBox />
       }
+
     ]
   }
 ])

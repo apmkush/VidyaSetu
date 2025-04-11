@@ -131,7 +131,6 @@ const login = () => {
         setIsForgotEmail(true);
     }
     const verifyOtp =async (e) => {
-        // setIsOtpVerified(true);
         e.preventDefault();
         try{
             const response=await axios.post('http://localhost:5000/verify-otp',{email,otp},{

@@ -15,6 +15,8 @@ const userId = "672cf85cfa2cadcd25bee67d";
 // import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
 // import Setting from './components/Setting.jsx/Setting.jsx'
 import Deadline from './components/Planner/Deadline.jsx'
+import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
+import Setting from './components/Setting.jsx/Setting.jsx'
 
 // create a router
 const router = createBrowserRouter([
@@ -41,19 +43,15 @@ const router = createBrowserRouter([
       {
         path: "achievements",
         element: <Achievement userId={userId} />
+      }, 
+      {
+        path: "Personalinfo",
+        element: <PersonalInfo />
       },
       {
-        path: "planner",
-        element: <ActivityCalendar />
+        path: "Setting",
+        element: <Setting />
       },
-      // {
-      //   path: "Personalinfo",
-      //   element: <PersonalInfo />
-      // },
-      // {
-      //   path: "Setting",
-      //   element: <Setting />
-      // },
       {
         path: "Deadline",
         element: <Deadline />

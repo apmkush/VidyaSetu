@@ -14,8 +14,7 @@ import Leaderboard from './components/Leaderboard/Leaderboard.jsx';
 import Login from './components/Login/Login.jsx';
 import Signup from './components/Signup/Signup.jsx';
 import Achievement from './components/Achievement/Achievement.jsx';
-import ActivityCalendar from './components/Planner/planner.jsx'
-import ChatBox from './components/chat.jsx'
+import ChatBox from './components/Chat/chat.jsx'
 import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx';
 import Setting from './components/Setting.jsx/Setting.jsx';
 import Deadline from './components/Planner/Deadline.jsx';

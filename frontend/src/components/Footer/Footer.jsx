@@ -16,11 +16,10 @@ function Footer() {
               <div className="mt-4">
                 <h4 className="text-white font-semibold text-xl mb-2">Social Media</h4>
                 <div className="flex space-x-2">
-                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faFacebook} /></a>
-                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faTwitter} /></a>
-                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faPinterest} /></a>
-                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faInstagram} /></a>
-                  <a href="/" className="text-white text-2xl"><FontAwesomeIcon icon={faLinkedin} /></a>
+                  <a href="https://www.facebook.com/MNNITALLD/" className="text-white text-2xl"><FontAwesomeIcon icon={faFacebook} /></a>
+                  <a href="https://x.com/mnnitalld?lang=en" className="text-white text-2xl"><FontAwesomeIcon icon={faTwitter} /></a>
+                  <a href="https://www.instagram.com/mnnitalld/?hl=en" className="text-white text-2xl"><FontAwesomeIcon icon={faInstagram} /></a>
+                  <a href="https://www.linkedin.com/school/motilal-nehru-national-institute-of-technology/posts/?feedView=all" className="text-white text-2xl"><FontAwesomeIcon icon={faLinkedin} /></a>
                 </div>
 
               </div>
@@ -67,7 +66,7 @@ function Footer() {
             <p className="text-md text-white-400 mt-4">Get in touch through our social media channels or email.</p>
           </div>
         </div>
-        <div className="text-center mt-8 text-md ">&copy; 2024 VidyaSetu. All rights reserved.</div>
+        <div className="text-center mt-8 text-md ">&copy; 2025 VidyaSetu. All rights reserved.</div>
       </div>
     </footer>
   );

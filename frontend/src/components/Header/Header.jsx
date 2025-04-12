@@ -1,35 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FaTachometerAlt, FaCalendarAlt, FaChartLine, FaGift, FaUser , FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import DarkMode from './DarkMode';
 import LogoImage from './logo.jpeg';
 
 function Navbar() {
-  const [openDropdown, setOpenDropdown] = useState(null);// State for tracking open dropdowns to be toggled and closed. (this is important for mobile view)
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {// State for tracking login status by checking sessionStorage or backend
-    const savedStatus = sessionStorage.getItem('isLoggedIn');// Check sessionStorage for login status initially and set state
-    return savedStatus === 'true';
-  });
-
-  // Fetch login status from backend only if it's not in sessionStorage
-  useEffect(() => {
-    if (sessionStorage.getItem('isLoggedIn') === null) {  // this proceed only if sessionStorage does not have 'isLoggedIn'
-      const checkLoginStatus = async () => {
-        try {
-          // Replace this with actual API call to check login status
-          const loggedIn = await new Promise((resolve) => setTimeout(() => resolve(false), 1000));
-          setIsLoggedIn(loggedIn);
-          sessionStorage.setItem('isLoggedIn', loggedIn); // Save status to sessionStorage
-        } catch (error) {
-          console.error("Error checking login status:", error);
-          setIsLoggedIn(false);
-          sessionStorage.setItem('isLoggedIn', false);
-        }
-      };
-      checkLoginStatus();
-    }
-  }, []);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
 
   // Handlers for dropdown visibility
   const handleMouseEnter = (section) => {
@@ -51,7 +29,7 @@ function Navbar() {
         </div>
 
         {/* Navigation Links */}
-        <nav className={`flex-1 flex justify-center ${isLoggedIn ? 'space-x-12' : 'space-x-10'} lg:space-x-16`}>
+        <nav className={`flex-1 flex justify-center ${isAuthenticated  ? 'space-x-12' : 'space-x-10'} lg:space-x-16`}>
           
           {/* Dashboard Section */}
           <div 
@@ -156,7 +134,7 @@ function Navbar() {
         <div className="flex items-center space-x-4 mt-4 lg:mt-0">
           <DarkMode />
           {/* Conditionally render Login and Signup based on isLoggedIn */}
-          {!isLoggedIn && (
+          {!isAuthenticated && (
             <>
               <Link to="/login" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-md">
                 Login

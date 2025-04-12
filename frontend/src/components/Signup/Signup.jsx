@@ -1,148 +1,158 @@
 import React, { useState } from 'react';
-import axios, { Axios } from 'axios';
+import axios from 'axios';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify'; 
+import { ToastContainer, toast } from 'react-toastify';
+import { CheckCircle2 } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Signup = () => {
-  const [message, setMessage] = useState('');
   const navigate = useNavigate();
-  const [formInput,setFormInput]=useState({
-      name:"",
-      email:"",
-      tel:"",
-      password:"",
-      confirm_password:"",
-      regno:"",
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  
-  const handleInput=(event)=>{
-    const{name,value}=event.target;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm();
 
-    let obj={[name]:value};
+  const onSubmit = async (data) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post('http://localhost:5000/singup', data, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    setFormInput((prev)=>({...prev,...obj}));
-};
+      if (response.data.success) {
+        toast.success('Signup successful!');
+        setShowSuccess(true);
+        reset(); // Clear form fields
 
-  const handleSubmit=async(e)=>{
-    e.preventDefault();
-    if(formInput.name==""||formInput.email==""||formInput.password==""||formInput.tel==""||formInput.confirm_password==""){
-        toast.error("Please fill all credentials");
+        setTimeout(() => {
+          navigate('/login');
+        }, 2500);
+      } else {
+        toast.error(response.data.message || 'Signup failed!');
+      }
+    } catch (error) {
+      toast.error('An error occurred!');
+      console.error(error);
     }
-    else try{
-        const response=await axios.post('http://localhost:5000/singup',formInput,{
-            headers:{
-                'Content-Type':'application/json'
-            }
-        });
-        if(response.data.success){
-            toast.success('SingUp successful!!', {
-                position: "top-center",
-                autoClose: 3000, // Auto-close after 3 seconds
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-            });
-            
-        }else{
-            toast.error(response.data.message);
-        }
-        setMessage(response.data.message);
-    }
-    catch(error){
-        setMessage("An error has occured!!");
-        console.log(error);
-    }
-    setTimeout(() => {
-        navigate('/');
-    }, 3000);
-};
+    setIsSubmitting(false);
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-100">
+      {showSuccess && (
+        <div className="absolute top-10 bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-2">
+          <CheckCircle2 className="text-green-600 w-6 h-6" />
+          <span>Signup successful! Redirecting...</span>
+        </div>
+      )}
+
       <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-lg">
         <h2 className="text-2xl font-bold text-center text-blue-600">Sign Up for VidyaSetu</h2>
-        {message && <p className="text-red-500 text-sm text-center">{message}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
-              name="name"
-              onChange={handleInput}
+              {...register('name', { required: 'Name is required' })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your name"
-              required
             />
+            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
-              name="email"
-              onChange={handleInput}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: {
+                  value: /^\S+@\S+$/i,
+                  message: 'Invalid email format',
+                },
+              })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your email"
-              required
             />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tel</label>
+            <label className="block text-sm font-medium text-gray-700">Mobile</label>
             <input
-              type="number"
-              name="tel"
-              onChange={handleInput}
+              type="tel"
+              {...register('tel', {
+                required: 'Mobile number is required',
+                minLength: { value: 10, message: 'Enter a valid number' },
+              })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your mobile number"
-              required
             />
+            {errors.tel && <p className="text-red-500 text-sm">{errors.tel.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Reg no</label>
             <input
               type="number"
-              name="regno"
-              onChange={handleInput}
+              {...register('regno', { required: 'Reg no is required' })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your reg no"
-              required
             />
+            {errors.regno && <p className="text-red-500 text-sm">{errors.regno.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
             <input
-              type="text"
-              name="password"
-              onChange={handleInput}
+              type="password"
+              {...register('password', {
+                required: 'Password is required',
+                minLength: {
+                  value: 6,
+                  message: 'Password must be at least 6 characters',
+                },
+              })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Create a password"
-              required
             />
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
             <input
               type="password"
-              name="confirm_password"
-              onChange={handleInput}
+              {...register('confirm_password', {
+                validate: (value) =>
+                  value === watch('password') || 'Passwords do not match',
+              })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Confirm your password"
-              required
             />
+            {errors.confirm_password && (
+              <p className="text-red-500 text-sm">{errors.confirm_password.message}</p>
+            )}
           </div>
           <button
             type="submit"
-            className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isSubmitting}
+            className={`w-full px-4 py-2 font-semibold text-white rounded-md focus:outline-none focus:ring-2 ${
+              isSubmitting ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            Sign Up
+            {isSubmitting ? 'Submitting...' : 'Sign Up'}
           </button>
-        <ToastContainer />
+          <ToastContainer />
         </form>
         <p className="text-sm text-center text-gray-600">
-          Already have an account? <a href="/login" className="text-blue-600 hover:underline">Login</a>
+          Already have an account?{' '}
+          <a href="/login" className="text-blue-600 hover:underline">
+            Login
+          </a>
         </p>
       </div>
     </div>

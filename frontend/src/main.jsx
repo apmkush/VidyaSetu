@@ -16,6 +16,8 @@ const userId = "672cf85cfa2cadcd25bee67d";
 import Deadline from './components/Planner/Deadline.jsx'
 import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx'
 import Setting from './components/Setting.jsx/Setting.jsx'
+import TimetableSlotForm from './components/TimeTable/TimetableSlotForm.jsx'
+import TimetableView from './components/TimeTable/TimeTableView.jsx'
 
 // create a router
 const router = createBrowserRouter([
@@ -54,6 +56,14 @@ const router = createBrowserRouter([
       {
         path: "Deadline",
         element: <Deadline />
+      },
+      {
+        path : "TimeTable",
+        element : <TimetableSlotForm/>
+      },
+      {
+        path : "planner/timetable",
+        element : <TimetableView/>
       }
     ]
   }

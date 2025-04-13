@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { FaTachometerAlt, FaCalendarAlt, FaChartLine, FaGift, FaUser } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch,useSelector } from 'react-redux';
+import {  logout} from "../../store/authSlice";
 import DarkMode from './DarkMode';
 import LogoImage from './logo.jpeg';
 
 function Navbar() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const dispatch=useDispatch();
+  // console.log(isAuthenticated);
 
   // Handlers for dropdown visibility
   const handleMouseEnter = (section) => {
     setOpenDropdown(section);
   };
+
+  const handleLogout=()=>{
+    dispatch(logout());
+  }
 
   const handleMouseLeave = () => {
     setOpenDropdown(null);
@@ -136,6 +143,11 @@ function Navbar() {
                 Signup
               </Link>
             </>
+          )}
+          {isAuthenticated&&(
+            <button type="submit" onClick={handleLogout} className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors duration-200 shadow-md">
+              {"Logout"}
+            </button>
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FaTachometerAlt, FaCalendarAlt, FaChartLine, FaGift, FaUser } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTachometerAlt, FaCalendarAlt, FaChartLine, FaGift, FaUser , FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useDispatch,useSelector } from 'react-redux';
 import {  logout} from "../../store/authSlice";
@@ -109,6 +109,13 @@ function Navbar() {
                 <Link to="/leaderboard" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Leaderboard</Link>
               </div>
             )}
+          </div>
+
+          {/* Simplified Timetable section without dropdown links */}
+          <div className="flex items-center text-gray-600 dark:text-gray-300 font-semibold hover:cursor-pointer text-lg">
+            <Link to="/TimeTable" className="flex items-center">
+              <FaClock className="mr-1" /> Timetable
+            </Link>
           </div>
 
           {/* Profile Section */}

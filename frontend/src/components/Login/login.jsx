@@ -5,6 +5,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useDispatch, useSelector } from "react-redux";
 import {  loginStart,  loginSuccess,  loginFailure,} from "../../store/authSlice";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Login() {
   const navigate = useNavigate();
@@ -15,6 +17,19 @@ function Login() {
     email: "",
     password: "",
   });
+
+  const DisplayMessage = (text) => {
+    toast.success(text, {
+        position: "top-center",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        style: { marginTop: "10px" },
+    });
+};
 
   const handleChange = (e) => {
     setFormData((prevData) => ({
@@ -29,7 +44,7 @@ function Login() {
     dispatch(loginStart());
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/user/login",
+        "http://localhost:5000/login",
         formData
       );
 
@@ -48,6 +63,7 @@ function Login() {
     } catch (error) {
       const message =
         error.response?.data?.message || "Something went wrong";
+        console.log(error);
       DisplayMessage(message, "error");
       dispatch(loginFailure(message));
     }
@@ -85,6 +101,7 @@ function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <ToastContainer />
       <form
         className="w-full max-w-sm bg-white p-8 rounded shadow-md"
         onSubmit={handleSubmit}

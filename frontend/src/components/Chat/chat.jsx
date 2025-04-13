@@ -2,24 +2,75 @@
 import React, { useState, useEffect, useRef } from "react";
 import socket from "../../socket";
 import axios from "axios";
+import { useSelector } from 'react-redux';
 
 const ChatBox = () => {
+  
+  const User = useSelector(state => state.auth.user);
+  const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [receiverId, setReceiverId] = useState(null);
   const chatEndRef = useRef(null);
-  const currentUserId="kjad";
-  const receiverId="anjdf";
+  const currentUserId=User._id;
+  // const receiverId="anjdf";
+
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/chat/users",{currentUserId});
+      // Exclude self from list
+      const others = res.data.filter(user => user._id !== currentUserId);
+      setUsers(others);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch messages if a receiver is selected and current user exists
+    if (!receiverId || !currentUserId) return;
+
+    const fetchMessages = async () => {
+      try {
+        const { data } = await axios.get(
+          `http://localhost:5000/getMessages/${receiverId}`,
+          {
+            params: { currentUserId },
+            headers: {
+              // Pass your token if necessary (e.g., JWT token authentication)
+              // Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setMessages(data);
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+        setError("Failed to load messages.");
+      } finally {
+        // setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [receiverId, currentUserId]);
 
   useEffect(() => {
     socket.emit("join", currentUserId);
 
-    socket.on("receiveMessage", (data) => {
+    socket.off("receiveMessage");
+
+    socket.on("receiveMessage", (data) => {    
       setMessages((prev) => [...prev, data]);
+      // console.log(data.text);
     });
+
+    fetchUsers();
 
     return () => {
       socket.off("receiveMessage");
     };
+    
   }, [currentUserId]);
 
   useEffect(() => {
@@ -29,9 +80,13 @@ const ChatBox = () => {
   const handleSend = async () => {
     try{
         if (!message.trim()) return;
+        if (!receiverId) {
+          alert("Please select a user to chat with.");
+          return;
+        }
         const res = await axios.post(
             `http://localhost:5000/sendMessage/${receiverId}`,
-            { text:message },
+            { text:message,senderId:currentUserId },
             {
             //   headers: {
             //     Authorization: `Bearer ${token}`,
@@ -56,7 +111,26 @@ const ChatBox = () => {
   };
 
   return (
+    
     <div className="w-full max-w-md mx-auto p-4 border rounded-lg shadow">
+
+    <div className="mb-4">
+      <h3 className="font-semibold">Users</h3>
+      <ul>
+        {users.map(user => (
+          <li
+            key={user._id}
+            onClick={() => setReceiverId(user._id)}
+            className={`cursor-pointer p-2 rounded ${
+              receiverId === user._id ? "bg-blue-200" : "hover:bg-gray-200"
+            }`}
+          >
+            {user.name}
+          </li>
+        ))}
+      </ul>
+    </div>
+
       <div className="h-96 overflow-y-auto mb-2 bg-gray-100 p-2 rounded">
         {messages.map((msg, index) => (
           <div

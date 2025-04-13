@@ -31,11 +31,12 @@ io.on("connection", (socket) => {
     console.log(`${userId} joined with socket id ${socket.id}`);
   });
 
+
   // Handle incoming message
   // socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
   //   const newMsg = new Message({ senderId, receiverId, text });
   //   await newMsg.save();
-
+  //   // console.log(newMsg);
   //   const receiverSocket = users[receiverId];
   //   if (receiverSocket) {
   //     io.to(receiverSocket).emit("receiveMessage", {

@@ -26,7 +26,8 @@ export const login = async (req, res) => {
         const isPasswordMatch = await bcrypt.compare(req.body.password,check.password);
         if(isPasswordMatch){
             const authToken = generateToken(check.id);
-            res.json({success:true,message:"Login successful!!",token:authToken});
+            const { password, ...userWithoutPassword } = check.toObject();
+            res.json({success:true,message:"Login successful!!",token:authToken,user:userWithoutPassword});
             console.log("Login successful");
         }else{
             res.json({success:false,message:"wrong password!!"});

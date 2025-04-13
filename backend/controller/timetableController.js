@@ -330,3 +330,31 @@ export const getTimetableData = async (req, res) => {
         });
     }
 };
+
+
+export const deleteTimetableSlot = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedSlot = await TimetableSlot.findByIdAndDelete(id);
+        
+        if (!deletedSlot) {
+            return res.status(404).json({
+                success: false,
+                message: "Timetable slot not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Timetable slot deleted successfully",
+            data: deletedSlot
+        });
+    } catch (error) {
+        console.error("Error deleting timetable slot:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};

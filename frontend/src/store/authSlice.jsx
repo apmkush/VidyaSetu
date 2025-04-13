@@ -3,10 +3,11 @@ import { createSlice } from '@reduxjs/toolkit';
 // Try to fetch from localStorage if available
 const storedUser = localStorage.getItem('user');
 const storedToken = localStorage.getItem('token');
+// console.log(storedToken);
 
 const initialState = {
     isAuthenticated: !!storedToken,
-    user: storedUser ? JSON.parse(storedUser) : null,
+    user: (storedUser && storedUser !== "undefined") ? JSON.parse(storedUser) : null,
     token: storedToken || null,
     loading: false,
     error: null,
@@ -28,6 +29,7 @@ const authSlice = createSlice({
 
             // Save to localStorage
             localStorage.setItem('user', JSON.stringify(action.payload.user));
+            console.log(action.payload.user);
             localStorage.setItem('token', action.payload.token);
         },
         loginFailure(state, action) {

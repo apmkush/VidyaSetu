@@ -10,4 +10,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Verify Cloudinary config (optional but recommended)
+try {
+  await cloudinary.api.ping(); // Test connection
+  console.log("✅ Cloudinary connected successfully");
+} catch (err) {
+  console.error("❌ Cloudinary connection failed:", err.message);
+}
+
 export default cloudinary;

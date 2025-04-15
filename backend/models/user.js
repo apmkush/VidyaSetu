@@ -35,12 +35,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-<<<<<<< HEAD
     profileImageURL: {
         type: String,
         default: "images/download.jpg",
     },
-=======
     userRole: {
         type: String,
         enum: ['student', 'teacher', 'authority'],
@@ -85,7 +83,6 @@ const userSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true // This automatically adds createdAt and updatedAt fields
->>>>>>> 086db05e87d1b192b3b4ba5c6e8e6a9cc2390b5d
 });
 
 const UserModel = mongoose.model("User", userSchema);

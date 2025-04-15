@@ -33,6 +33,10 @@ const userSchema=new mongoose.Schema({
         type:Boolean,
         default:false,
     },
+    profileImageURL: {
+        type: String,
+        default: "images/download.jpg",
+    },
 });
 
 const UserModel=mongoose.model("User",userSchema);

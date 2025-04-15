@@ -1,43 +1,92 @@
 import mongoose from "mongoose";
 
-const userSchema=new mongoose.Schema({
-    name:{
-        type:String,
-        require:true
+const userSchema = new mongoose.Schema({
+    // Existing fields (unchanged)
+    name: {
+        type: String,
+        required: true
     },
-    email:{
-        type:String,
-        require:true
+    email: {
+        type: String,
+        required: true,
+        unique: true
     },
-    phone:{
-        type:Number,
-        require:true
+    phone: {
+        type: Number,
+        required: true
     },
     password: {
         type: String,
         required: true
     },
-    regno:{
-        type:Number,
-        require:true,
-        min:0
+    regno: {
+        type: Number,
+        required: true,
+        min: 0
     },
-    auraPoints:{
-        type:Number,
-        default:0,
+    auraPoints: {
+        type: Number,
+        default: 0,
     },
-    achievements:{
+    achievements: {
         type: [String],
     },
-    dark:{
-        type:Boolean,
-        default:false,
+    dark: {
+        type: Boolean,
+        default: false,
     },
+<<<<<<< HEAD
     profileImageURL: {
         type: String,
         default: "images/download.jpg",
     },
+=======
+    userRole: {
+        type: String,
+        enum: ['student', 'teacher', 'authority'],
+        required: true,
+        default: 'student'
+    },
+
+    // New fields as per your request
+    course: {
+        type: String
+    },
+    branch: {
+        type: String,
+        required: function() { return ['student', 'teacher'].includes(this.userRole); }
+    },
+    semester: {
+        type: Number,
+        required: function() { return this.userRole === 'student'; }
+    },
+    subjects: {
+        type: [String],
+        required: function() { return this.userRole === 'teacher'; }
+    },
+    dateOfBirth: {
+        type: Date
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other', 'prefer-not-to-say'],
+        default: 'prefer-not-to-say'
+    },
+    address: {
+        street: { type: String },
+        city: { type: String },
+        state: { type: String },
+        postalCode: { type: String },
+        country: { type: String, default: 'India' }
+    },
+    profilePic: {
+        type: String, // This will store the URL/path to the image
+        default: '' // Default can be a placeholder image URL if needed
+    }
+}, {
+    timestamps: true // This automatically adds createdAt and updatedAt fields
+>>>>>>> 086db05e87d1b192b3b4ba5c6e8e6a9cc2390b5d
 });
 
-const UserModel=mongoose.model("User",userSchema);
-export{UserModel};
+const UserModel = mongoose.model("User", userSchema);
+export { UserModel };

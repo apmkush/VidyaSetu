@@ -191,23 +191,23 @@ export const verifyotp=async (req, res) => {
 }
 
 export const resetPassword = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-  
-      // Find the user by email
-      const user = await UserModel.findOne({ email });
+  try {
+    const { email, password } = req.body;
 
-      // Hash the new password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-      // Update the user's password
-      user.password = hashedPassword;
-      await user.save();
-  
-      return res.json({ message: "Password reset successfully" });
-    } catch (error) {
-      console.log(error);
-      return res.json({ message: "Internal server error" });
-    }
-  };
+    // Find the user by email
+    const user = await UserModel.findOne({ email });
+
+    // Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.json({ message: "Internal server error" });
+  }
+};

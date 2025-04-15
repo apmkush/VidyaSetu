@@ -17,17 +17,22 @@ export default function BlogForm() {
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
+
     const formData = new FormData();
-    formData.append('coverImage', data.coverImage[0]);
+    formData.append('coverImage', data.coverImage);
     formData.append('title', data.title);
     formData.append('body', data.body);
 
+   
+
     try {
-      const response = await axios.post('/blog', formData, {
+      const response = await axios.post('http://localhost:5000/createblogform', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      
 
       toast.success(
         <>
@@ -39,7 +44,7 @@ export default function BlogForm() {
       reset();
 
       setTimeout(() => {
-        navigate('/blogs'); // Change to your blog list route
+        navigate('/blog'); // Change to your blog list route
       }, 2000);
     } catch (error) {
       console.error('Upload error:', error);
@@ -52,12 +57,12 @@ export default function BlogForm() {
       <h2>Create Blog Post</h2>
       <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
         <div className="mb-3">
-          <label htmlFor="coverImage" className="form-label">Cover Image</label>
+          <label htmlFor="coverImage" className="form-label">Cover Image: </label>
           <input
             type="file"
             className="form-control"
             id="coverImage"
-            {...register('coverImage', { required: 'Cover image is required' })}
+            {...register('coverImage')}
           />
           {errors.coverImage && (
             <p className="text-danger">{errors.coverImage.message}</p>
@@ -68,7 +73,7 @@ export default function BlogForm() {
           <label htmlFor="title" className="form-label">Title</label>
           <input
             type="text"
-            className="form-control"
+            className="form-control w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             id="title"
             {...register('title', { required: 'Title is required' })}
           />
@@ -81,7 +86,7 @@ export default function BlogForm() {
           <label htmlFor="body" className="form-label">Body</label>
           <textarea
             id="body"
-            className="form-control"
+            className="form-control w-full px-4 py-2 border border-red rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows="5"
             {...register('body', { required: 'Body content is required' })}
           ></textarea>

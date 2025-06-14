@@ -5,7 +5,7 @@ import leaderboardRoute from './leaderboardRoute.js';
 import pointsRoute from './PointRoute.js';
 import eventRoute from './eventRoute.js';
 import messageRoute from "./messageRoute.js";
-import timetableRoute from './timetableRoute.js';
+import attendanceRoute from './attendenceRoute.js';
 
 
 router.use(authRoute);
@@ -14,7 +14,7 @@ router.use(pointsRoute);
 router.use(eventRoute);
 router.use(messageRoute);
 
-router.use(timetableRoute);
+router.use(attendanceRoute);
 
 
 export default router;

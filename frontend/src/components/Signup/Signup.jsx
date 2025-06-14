@@ -11,6 +11,10 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const branches = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'];
+  const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
+  const sections = ['A', 'B', 'C', 'D'];
+
   const {
     register,
     handleSubmit,
@@ -67,6 +71,7 @@ const Signup = () => {
             />
             {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -83,6 +88,7 @@ const Signup = () => {
             />
             {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700">Mobile</label>
             <input
@@ -96,6 +102,7 @@ const Signup = () => {
             />
             {errors.tel && <p className="text-red-500 text-sm">{errors.tel.message}</p>}
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700">Reg no</label>
             <input
@@ -106,6 +113,58 @@ const Signup = () => {
             />
             {errors.regno && <p className="text-red-500 text-sm">{errors.regno.message}</p>}
           </div>
+
+          {/* Branch Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Branch</label>
+            <select
+              {...register('branch', { required: 'Branch is required' })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Branch</option>
+              {branches.map((branch) => (
+                <option key={branch} value={branch}>
+                  {branch}
+                </option>
+              ))}
+            </select>
+            {errors.branch && <p className="text-red-500 text-sm">{errors.branch.message}</p>}
+          </div>
+
+          {/* Semester Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Semester</label>
+            <select
+              {...register('semester', { required: 'Semester is required' })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Semester</option>
+              {semesters.map((sem) => (
+                <option key={sem} value={sem}>
+                  {sem}
+                </option>
+              ))}
+            </select>
+            {errors.semester && <p className="text-red-500 text-sm">{errors.semester.message}</p>}
+          </div>
+
+          {/* Section Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Section</label>
+            <select
+              {...register('section', { required: 'Section is required' })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Section</option>
+              {sections.map((sec) => (
+                <option key={sec} value={sec}>
+                  {sec}
+                </option>
+              ))}
+            </select>
+            {errors.section && <p className="text-red-500 text-sm">{errors.section.message}</p>}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
             <input
@@ -122,6 +181,7 @@ const Signup = () => {
             />
             {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
             <input
@@ -137,6 +197,7 @@ const Signup = () => {
               <p className="text-red-500 text-sm">{errors.confirm_password.message}</p>
             )}
           </div>
+          
           <button
             type="submit"
             disabled={isSubmitting}

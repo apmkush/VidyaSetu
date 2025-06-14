@@ -18,6 +18,7 @@ import ChatBox from './components/Chat/chat.jsx'
 import PersonalInfo from './components/personalinfo.jsx/Personalinfo.jsx';
 import Setting from './components/Setting.jsx/Setting.jsx';
 import Deadline from './components/Planner/Deadline.jsx';
+import StudentAttendanceMark from './components/Attendence/attendence.jsx';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Dummy userId for Achievement route
@@ -76,6 +77,10 @@ const router = createBrowserRouter([
       {
         path : "planner/timetable",
         element : <TimetableView/>
+      },
+      {
+        path : "MarkAttendence",
+        element : <StudentAttendanceMark/>
       }
 
     ]

@@ -47,7 +47,11 @@ export const signup = async (req, res) => {
         password:req.body.password,
         confirm_password:req.body.confirm_password,
         regno:req.body.regno,
+        branch:req.body.branch,
+        semester:req.body.semester,
+        section:req.body.section
     };
+    console.log(data);
     try{
         const existingUser = await UserModel.findOne({email: data.email});
         if(data.password!=data.confirm_password){

@@ -27,6 +27,7 @@ const userId = "672cf85cfa2cadcd25bee67d";
 // import Setting from './components/Setting.jsx/Setting.jsx'
 import TimetableSlotForm from './components/TimeTable/TimetableSlotForm.jsx'
 import TimetableView from './components/TimeTable/TimeTableView.jsx'
+import BlogForm from './components/Blog/BlogForm.jsx';
 
 // App Routing Setup
 const router = createBrowserRouter([
@@ -81,7 +82,11 @@ const router = createBrowserRouter([
       {
         path : "MarkAttendence",
         element : <StudentAttendanceMark/>
-      }
+      },
+      {
+        path : "blogform",
+        element: <BlogForm/>
+      },
 
     ]
   }

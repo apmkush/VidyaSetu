@@ -5,6 +5,9 @@ dotenv.config();
 const PORT = process.env.PORT||5000;
 import mongoDB from "./config/db.js";
 import router from "./Routers/index.js";
+import path from "path";
+
+
 import { app, server } from "./config/socket.js"
 
 
@@ -18,6 +21,7 @@ app.use(express.json({ limit: '50mb' }));
 // app.use(bodyParser.urlencoded({ extended: true }));
 
 
+app.use(express.static(path.resolve('./public')));
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");

@@ -61,6 +61,18 @@ const Signup = () => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-lg">
         <h2 className="text-2xl font-bold text-center text-blue-600">Sign Up for VidyaSetu</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Upload Profile Image</label>
+            <input
+              type="file"
+              {...register('photo')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              
+            />
+            {errors.photo && <p className="text-red-500 text-sm">{errors.photo.message}</p>}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input

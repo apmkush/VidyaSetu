@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    profileImageURL: {
+        type: String,
+        default: "images/download.jpg",
+    },
     userRole: {
         type: String,
         enum: ['student', 'teacher', 'authority'],

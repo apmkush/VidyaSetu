@@ -2,57 +2,38 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSelector } from 'react-redux';
 
-const StudentAttendanceMark=()=> {
+const StudentAttendanceMark = () => {
   const [classId, setClassId] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-//   const [classes, setClasses] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
   const User = useSelector(state => state.auth.user);
-
-  const classes = [
-    {
-      _id: "cl001",
-      name: "Mathematics 101",
-      subject: "Math",
-      schedule: "Mon/Wed 9:00-10:30",
-      room: "Building A, Room 203"
-    },
-    {
-      _id: "cl002",
-      name: "Computer Science Fundamentals",
-      subject: "CS",
-      schedule: "Tue/Thu 11:00-12:30",
-      room: "Building B, Room 105"
-    },
-    {
-      _id: "cl003",
-      name: "Literature Survey",
-      subject: "English",
-      schedule: "Fri 13:00-15:00",
-      room: "Building C, Room 312"
-    }
-  ];
-
-//   useEffect(() => {
-//     const fetchClasses = async () => {
-//       try {
-//         const response = await axios.get('/get-classes');
-//         console.log(response.data);
-//         setClasses(response.data);
-//       } catch (err) {
-//         setError('Failed to load classes');
-//         console.log(err);
-//       }
-//     };
+  const UserId=User._id;
+  useEffect(() => {
+    const fetchActiveClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        const response = await axios.get(`http://localhost:5000/get-activeClasses/${UserId}`, {
+          // headers: {
+          //   Authorization: `Bearer ${User._id}`
+          // }
+        });
+        setClasses(response.data);
+      } catch (err) {
+        setError('Failed to load classes');
+        console.error(err);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
     
-//     fetchClasses();
-//     }, []);
+    fetchActiveClasses();
+  }, []);
 
-    // setClasses(exampleClasses);
-
-  const getCurrentLocation =async () => {
-     const res=await new Promise((resolve, reject) => {
+  const getCurrentLocation = async () => {
+    return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation is not supported by your browser'));
       }
@@ -75,7 +56,6 @@ const StudentAttendanceMark=()=> {
         }
       );
     });
-    return res;
   };
 
   const markAttendance = async () => {
@@ -86,23 +66,29 @@ const StudentAttendanceMark=()=> {
     try {
       // Get student's current location
       const location = await getCurrentLocation();
+
+      console.log(location);
       
       // Verify location accuracy is sufficient (within 20 meters)
-      if (location.accuracy > 20) {
+      if (location.accuracy > 100) {
         throw new Error('Your location accuracy is too low. Please enable high accuracy mode.');
       }
       
       // Send to backend
-      const res=await axios.post('http://localhost:5000/Mark_attendance', {
+      await axios.post('http://localhost:5000/Mark_attendence', {
         classId,
         studentLocation: {
           lat: location.lat,
           lng: location.lng
         }
+      }, {
+        // headers: {
+        //   Authorization: `Bearer ${localStorage.getItem('token')}`
+        // }
       });
       setSuccess(true); 
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setIsLoading(false);
     }
@@ -141,24 +127,28 @@ const StudentAttendanceMark=()=> {
           id="class-select"
           value={classId}
           onChange={(e) => setClassId(e.target.value)}
-          disabled={isLoading}
+          disabled={isLoading || loadingClasses}
           style={{
             width: '100%',
             padding: '0.75rem',
             borderRadius: '8px',
             border: '1px solid #dfe6e9',
-            backgroundColor: isLoading ? '#f5f6fa' : '#fff',
+            backgroundColor: isLoading || loadingClasses ? '#f5f6fa' : '#fff',
             fontSize: '1rem',
-            cursor: 'pointer',
+            cursor: isLoading || loadingClasses ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s ease'
           }}
         >
           <option value="">-- Select a Class --</option>
-          {classes.map(c => (
-            <option key={c._id} value={c._id} style={{ padding: '0.5rem' }}>
-              {c.name}
-            </option>
-          ))}
+          {loadingClasses ? (
+            <option value="" disabled>Loading classes...</option>
+          ) : (
+            classes.map(c => (
+              <option key={c._id} value={c._id} style={{ padding: '0.5rem' }}>
+                {c.name}
+              </option>
+            ))
+          )}
         </select>
       </div>
       
@@ -192,17 +182,17 @@ const StudentAttendanceMark=()=> {
       
       <button
         onClick={markAttendance}
-        disabled={!classId || isLoading}
+        disabled={!classId || isLoading || loadingClasses}
         style={{
           width: '100%',
           padding: '0.875rem',
-          backgroundColor: !classId || isLoading ? '#bdc3c7' : '#3498db',
+          backgroundColor: !classId || isLoading || loadingClasses ? '#bdc3c7' : '#3498db',
           color: 'white',
           border: 'none',
           borderRadius: '8px',
           fontSize: '1rem',
           fontWeight: '600',
-          cursor: !classId || isLoading ? 'not-allowed' : 'pointer',
+          cursor: !classId || isLoading || loadingClasses ? 'not-allowed' : 'pointer',
           transition: 'all 0.3s ease',
           margin: '1rem 0',
           display: 'flex',
@@ -238,7 +228,6 @@ const StudentAttendanceMark=()=> {
         </p>
       </div>
   
-      {/* Add this to your CSS for the loading spinner */}
       <style jsx>{`
         @keyframes spin {
           to { transform: rotate(360deg); }

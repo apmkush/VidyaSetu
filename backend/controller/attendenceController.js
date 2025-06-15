@@ -528,3 +528,68 @@ export const getTeachers=async (req,res)=>{
     });
   }
 };
+
+export const getActiveClasses = async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const currentDay = currentDate.toLocaleString('en-US', { weekday: 'long' });
+    const currentTime = currentDate.toTimeString().substring(0, 5); // "HH:MM" format
+    const UserId=req.params.id;
+    // console.log(req.params.id);
+    // First get all classes where the student is enrolled
+    const student = await UserModel.findById(UserId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    // console.log(student);
+    // Get classes for the student's branch/semester/section
+    const classes = await ClassModel.find({
+      'context.branch': student.branch,
+      'context.semester': student.semester,
+      'context.section': student.section,
+      'status': 'active',
+      // 'schedule.days': currentDay
+    })
+    .populate('facultyId', 'name email')
+    .lean(); // Convert to plain objects to access virtuals
+    // console.log(classes);
+
+    // Filter classes in JavaScript to utilize virtuals
+    const activeClasses = classes.filter(cls => {
+      // Use the virtual property
+      const isInSession = cls.currentStatus === 'in-session';
+      
+      // Check if attendance already marked today
+      const attendanceMarkedToday = cls.attendanceRecords.some(record => {
+        const recordDate = new Date(record.date).toDateString();
+        return recordDate === currentDate.toDateString() && 
+               record.records.some(r => r.studentId.toString() === UserId);
+      });
+
+      return isInSession && !attendanceMarkedToday;
+    });
+    console.log(activeClasses);
+
+    // Format the response
+    const result = activeClasses.map(cls => ({
+      _id: cls._id,
+      name: cls.name,
+      subject: cls.subject,
+      facultyId: cls.facultyId,
+      facultyName: cls.facultyId?.name,
+      context: cls.context,
+      schedule: cls.schedule,
+      room: cls.room,
+      classType: cls.classType,
+      currentStatus: cls.currentStatus // Virtual property included
+    }));
+    // console.log(result);
+    res.json(classes);
+  } catch (err) {
+    console.error('Error fetching active classes:', err);
+    res.status(500).json({ 
+      message: 'Failed to fetch active classes',
+      error: err.message 
+    });
+  }
+};

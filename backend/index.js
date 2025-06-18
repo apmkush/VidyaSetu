@@ -9,7 +9,7 @@ import { app, server } from "./config/socket.js"
 import cloudinary from "./config/cloudinary.js";
 
 
-cloudinary() ; 
+// cloudinary() ; 
 // const app=express();
 app.use(cors({
     origin: "http://localhost:5173",

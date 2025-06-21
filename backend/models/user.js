@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    profileImageURL: {
+        type: String,
+        default: "images/download.jpg",
+    },
     userRole: {
         type: String,
         enum: ['student', 'teacher', 'authority'],
@@ -54,9 +58,9 @@ const userSchema = new mongoose.Schema({
         type: Number,
         required: function() { return this.userRole === 'student'; }
     },
-    subjects: {
-        type: [String],
-        required: function() { return this.userRole === 'teacher'; }
+    section: {
+        type: String,
+        required: function() { return this.userRole === 'student'; }
     },
     dateOfBirth: {
         type: Date

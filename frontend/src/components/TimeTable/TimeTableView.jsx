@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useCallback } from 'react';
 import axios from 'axios';
 import TimetableSlotForm from './TimetableSlotForm';
 
@@ -99,16 +99,17 @@ const TimetableView = () => {
         }
     };
 
-    const handleUpdateSuccess = () => {
+    const handleUpdateSuccess = useCallback(() => {
+        console.log("Check");
         setShowModal(false);
         fetchTimetableData();
-    };
+      }, [fetchTimetableData]);
 
     const getSlotContent = (day, timeSlot) => {
         if (timeSlot.isLunch) return 'Lunch Break';
-        
+        console.log(timetableData);
         const slot = timetableData.find(item => 
-            item.schedule.day.includes(day) &&
+            item.schedule.days.includes(day) &&
             item.schedule.startTime <= timeSlot.start &&
             item.schedule.endTime >= timeSlot.end
         );

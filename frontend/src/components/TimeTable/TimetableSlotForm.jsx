@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
+  const branches = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'];
+  const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
+  const sections = ['A', 'B', 'C', 'D'];
+  const [teachers, setTeachers] = useState([]);
+  const [rooms, setRooms] = useState([]);
+
   const [slot, setSlot] = useState({
     context: {
       branch: '',
@@ -9,13 +15,13 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
       section: ''
     },
     schedule: {
-      day: [],
+      days: [],
       startTime: '',
       endTime: '',
       pattern: 'weekly'
     },
     subject: '',
-    teacher: '',
+    facultyId: '',
     room: '',
     type: 'lecture',
     notes: ''
@@ -26,8 +32,29 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
+    // Fetch teachers and rooms from backend
+    const fetchData = async () => {
+      try {
+        const [teachersRes, roomsRes] = await Promise.all([
+          axios.get('http://localhost:5000/get-teachers'),
+          axios.get('http://localhost:5000/get-rooms')
+        ]);
+        setTeachers(teachersRes.data.data);
+        setRooms(roomsRes.data.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+
     if (slotData) {
-      setSlot(slotData);
+      const updatedSlot = {
+        ...slotData,
+        facultyId: slotData.teacher?._id || slotData.teacher || slotData.facultyId || '',
+        room: slotData.room?._id || slotData.room || ''
+      };
+      setSlot(updatedSlot);
     }
   }, [slotData]);
 
@@ -46,9 +73,9 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
         ...prev,
         schedule: {
           ...prev.schedule,
-          day: prev.schedule.day.includes(value)
-            ? prev.schedule.day.filter(d => d !== value)
-            : [...prev.schedule.day, value]
+          day: prev.schedule.days.includes(value)
+            ? prev.schedule.days.filter(d => d !== value)
+            : [...prev.schedule.days, value]
         }
       }));
     } else {
@@ -100,7 +127,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
     try {
       setSubmitting(true);
       await axios.delete(`http://localhost:5000/delete-timetable/${slot._id}`);
-      onSuccess();
+      onSuccess?.();
     } catch (error) {
       alert(`Error deleting slot: ${error.response?.data?.message || error.message}`);
     } finally {
@@ -120,36 +147,50 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block mb-2 font-medium">Branch</label>
-              <input
-                type="text"
+              <select
                 value={slot.context.branch}
                 onChange={(e) => handleChange('context.branch', e.target.value)}
                 className="w-full p-2 border rounded"
                 required
-              />
+              >
+                <option value="">Select Branch</option>
+                {branches.map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block mb-2 font-medium">Semester</label>
-              <input
-                type="text"
+              <select
                 value={slot.context.semester}
                 onChange={(e) => handleChange('context.semester', e.target.value)}
                 className="w-full p-2 border rounded"
                 required
-              />
+              >
+                <option value="">Select Semester</option>
+                {semesters.map(sem => (
+                  <option key={sem} value={sem}>Semester {sem}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block mb-2 font-medium">Section</label>
-              <input
-                type="text"
+              <select
                 value={slot.context.section}
                 onChange={(e) => handleChange('context.section', e.target.value)}
                 className="w-full p-2 border rounded"
                 required
-              />
+              >
+                <option value="">Select Section</option>
+                {sections.map(sec => (
+                  <option key={sec} value={sec}>Section {sec}</option>
+                ))}
+              </select>
             </div>
           </div>
-
+  
           {/* Schedule Fields */}
           <div className="mb-6">
             <h3 className="font-medium mb-3">Schedule</h3>
@@ -192,7 +233,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
                     <label key={day} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={slot.schedule.day.includes(day)}
+                        checked={slot.schedule.days.includes(day)}
                         onChange={() => handleChange('day', day)}
                         className="mr-2"
                       />
@@ -203,7 +244,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
               </div>
             </div>
           </div>
-
+  
           {/* Subject Details */}
           <div className="mb-6">
             <h3 className="font-medium mb-3">Subject Details</h3>
@@ -220,23 +261,35 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
               </div>
               <div>
                 <label className="block mb-2">Teacher</label>
-                <input
-                  type="text"
-                  value={slot.teacher}
-                  onChange={(e) => handleChange('teacher', e.target.value)}
+                <select
+                  value={slot.facultyId}
+                  onChange={(e) => handleChange('facultyId', e.target.value)}
                   className="w-full p-2 border rounded"
                   required
-                />
+                >
+                  <option value="">Select Teacher</option>
+                  {teachers.map(teacher => (
+                    <option key={teacher._id} value={teacher._id}>
+                      {teacher.name} ({teacher.email})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block mb-2">Room</label>
-                <input
-                  type="text"
+                <select
                   value={slot.room}
                   onChange={(e) => handleChange('room', e.target.value)}
                   className="w-full p-2 border rounded"
                   required
-                />
+                >
+                  <option value="">Select Room</option>
+                  {rooms.map(room => (
+                    <option key={room._id} value={room._id}>
+                      {room.name} ({room.building})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block mb-2">Type</label>
@@ -252,7 +305,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
               </div>
             </div>
           </div>
-
+  
           {/* Notes Field */}
           <div className="mb-4">
             <label className="block mb-2">Notes</label>
@@ -264,7 +317,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
             />
           </div>
         </div>
-
+  
         <div className="flex justify-end space-x-4">
           {slot._id && (
             <>
@@ -293,7 +346,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
             {submitting ? 'Saving...' : 'Save Slot'}
           </button>
         </div>
-
+  
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 max-w-md">
@@ -317,7 +370,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
             </div>
           </div>
         )}
-
+  
         {success && (
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
             Timetable slot {slot._id ? 'updated' : 'created'} successfully!

@@ -11,6 +11,10 @@ import path from "path";
 import { app, server } from "./config/socket.js"
 
 
+<<<<<<< HEAD
+// cloudinary() ; 
+=======
+>>>>>>> c633a9b9f6affca1587ed7904bd1a75b2aa33b6c
 // const app=express();
 app.use(cors({
     origin: "http://localhost:5173",

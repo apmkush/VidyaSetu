@@ -68,12 +68,12 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
           [child]: value
         }
       }));
-    } else if (field === 'day') {
+    } else if (field === 'days') {
       setSlot(prev => ({
         ...prev,
         schedule: {
           ...prev.schedule,
-          day: prev.schedule.days.includes(value)
+          days: prev.schedule.days.includes(value)
             ? prev.schedule.days.filter(d => d !== value)
             : [...prev.schedule.days, value]
         }
@@ -234,7 +234,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
                       <input
                         type="checkbox"
                         checked={slot.schedule.days.includes(day)}
-                        onChange={() => handleChange('day', day)}
+                        onChange={() => handleChange('days', day)}
                         className="mr-2"
                       />
                       {day}

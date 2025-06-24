@@ -10,16 +10,15 @@ export const authMiddleware = (req, res, next) => {
         if (token.startsWith("Bearer ")) {
             token = token.slice(7);
           }
-
         if (!token) {
             return res.status(401).json({ success: false, message: "Access denied. No token provided." });
         }
 
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // console.log(decoded.user);
+        // console.log(decoded.user.id);
         req.user = decoded.user; // Attach user data to request object
-
+        
         next(); // Continue to the next middleware/controller
     } catch (error) {
         console.error("Auth Middleware Error:", error);

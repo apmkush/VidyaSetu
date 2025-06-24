@@ -1,6 +1,7 @@
 import { Router } from "express";
 const router = Router();
 import { body } from "express-validator";
+import {authMiddleware} from '../middlewares/authMiddleware.js';
 import { login, signup, verifyotp, sendotp, resetPassword } from "../controller/authController.js";
 import cors from "cors";
 

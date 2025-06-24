@@ -1,66 +1,106 @@
 
-import  verifyLocation  from '../middlewares/geoLocation.js';
+import  {verifyLocation}  from '../middlewares/geoLocation.js';
 import ClassModel from "../models/Class.js";
 import Room from '../models/Rooms.js';
 import { UserModel } from "../models/user.js";
-import AttendanceModel from "../models/Rooms.js";
 
 export const Mark_attendence = async (req, res) => {
   try {
     const { classId, studentLocation } = req.body;
-    const studentId = req.user._id;
+    const studentId = req.user.id;
 
-    // 1. Find the class
-    const Class = await ClassModel.findById(classId);
-    if (!Class) return res.status(404).send('Class not found');
+    // 1. Find the class with populated students
+    const classRecord = await ClassModel.findById(classId)
+      .populate('students')
+      .populate('room');
+    
+    if (!classRecord) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
 
-    // 2. Verify student is in range
-    const isInClass = verifyLocation(Class.location, studentLocation, Class.radius || 50);
+    // 2. Check if student is enrolled
+    const isEnrolled = classRecord.students.some(student => 
+      student._id.toString() === studentId.toString()
+    );
+    if (!isEnrolled) {
+      return res.status(403).json({ error: 'You are not enrolled in this class' });
+    }
+
+    // 3. Verify room exists
+    if (!classRecord.room) {
+      return res.status(404).json({ error: 'Classroom not found' });
+    }
+
+    // 4. Verify student is in range
+    const isInClass = verifyLocation(
+      classRecord.room.location,
+      studentLocation,
+      classRecord.room.radius || 50
+    );
     if (!isInClass) {
-      return res.status(403).send('You must be in the classroom to mark attendance');
-    }
-
-    // 3. Prepare today's date (ignore time)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // 4. Find or create today's attendance record
-    let todayRecord = Class.attendanceRecords.find(record =>
-      new Date(record.date).getTime() === today.getTime()
-    );
-
-    if (!todayRecord) {
-      // Create new entry for today
-      todayRecord = {
-        date: today,
-        records: []
-      };
-      Class.attendanceRecords.push(todayRecord);
-    }
-
-    // 5. Check if this student is already marked
-    const studentRecordIndex = todayRecord.records.findIndex(r =>
-      r.studentId.toString() === studentId.toString()
-    );
-
-    if (studentRecordIndex === -1) {
-      // Student not marked yet — add them
-      todayRecord.records.push({
-        studentId,
-        status: 'present'
+      return res.status(403).json({ 
+        error: 'You must be in the classroom to mark attendance',
       });
-    } else {
-      // Student already marked — update status
-      todayRecord.records[studentRecordIndex].status = 'present';
     }
 
-    await Class.save();
+    // 5. Check class status
+    if (classRecord.currentStatus !== 'in-session') {
+      return res.status(403).json({ 
+        error: 'Attendance cannot be marked for inactive classes',
+        currentStatus: classRecord.status
+      });
+    }
 
-    return res.status(200).send({ message: 'Attendance marked successfully' });
+    // 6. Prepare today's date (timezone aware)
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    // 7. Find or create today's attendance record
+    let dailyRecord = classRecord.attendanceRecords.find(record =>
+      record.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+    );
+
+    if (!dailyRecord) {
+      // Create new entry with all students marked absent by default
+      dailyRecord = {
+        date: today,
+        records: classRecord.students.map(student => ({
+          studentId: student._id,
+          status: student._id.toString() === studentId.toString() ? 'present' : 'absent'
+        }))
+      };
+      classRecord.attendanceRecords.push(dailyRecord);
+    } else {
+      // Update only the current student's status
+      const studentRecord = dailyRecord.records.find(r =>
+        r.studentId.toString() === studentId.toString()
+      );
+      
+      if (studentRecord) {
+        studentRecord.status = 'present';
+      } else {
+        // Should never happen due to enrollment check
+        return res.status(403).json({ error: 'Student record not found' });
+      }
+    }
+
+    // 8. Save with conflict handling
+    await classRecord.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Attendance recorded successfully',
+      data: {
+        date: today,
+        status: 'present',
+      }
+    });
 
   } catch (err) {
-    console.error(err);
-    return res.status(500).send('Internal server error');
+    console.error('Attendance error:', err);
+    return res.status(500).json({
+      error: 'Failed to process attendance',
+    });
   }
 };
 
@@ -76,7 +116,7 @@ const validateClassSchedule = (context, schedule, subject, facultyId, room) => {
         return { isValid: false, message: "Missing context fields (branch, semester, section)" };
     }
 
-    if (!schedule.day || schedule.day.length === 0 || !schedule.startTime || !schedule.endTime) {
+    if (!schedule.days || schedule.days.length === 0 || !schedule.startTime || !schedule.endTime) {
         return { isValid: false, message: "Missing schedule fields (days[], startTime, endTime)" };
     }
 
@@ -242,7 +282,7 @@ export const createClassSchedule = async (req, res) => {
       notes = '',
       createdBy
     } = req.body;
-    // console.log(req.body);
+    // console.log(schedule);
     // Validate input
     const validation = validateClassSchedule(context, schedule, subject, facultyId, room);
     if (!validation.isValid) {
@@ -270,18 +310,18 @@ export const createClassSchedule = async (req, res) => {
     }).select('_id');
 
     const studentIds = students.map(student => student._id);
-
     // Initialize attendance records with all students as absent
     const initialAttendanceRecords = studentIds.map(studentId => ({
       studentId,
       status: "absent"
     }));
-
+    
     // Create and save new class
     const newClass = new ClassModel({
       name: `${subject} - ${context.section}`,
       subject,
       facultyId,
+      students:studentIds,
       context: {
         branch: context.branch,
         semester: context.semester,
@@ -304,8 +344,7 @@ export const createClassSchedule = async (req, res) => {
       createdBy: createdBy || null
     });
 
-    await newClass.save();
-
+    const savedClass=await newClass.save();
     return res.status(201).json({
       success: true,
       message: "Class schedule created successfully with student enrollment!",
@@ -355,6 +394,13 @@ export const updateClassSchedule = async (req, res) => {
               message: "Class schedule not found"
           });
       }
+      const students = await UserModel.find({
+        userRole: 'student',
+        branch: context.branch,
+        semester: context.semester
+      }).select('_id');
+
+    const studentIds = students.map(student => student._id);
 
       // Update class schedule while preserving existing attendance records
       const updatedClass = await ClassModel.findByIdAndUpdate(
@@ -363,6 +409,7 @@ export const updateClassSchedule = async (req, res) => {
               name: `${subject} - ${context.section}`,
               subject,
               facultyId,
+              studentIds,
               context: {
                   branch: context.branch,
                   semester: context.semester,

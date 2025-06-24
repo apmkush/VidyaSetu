@@ -10,10 +10,11 @@ import {
     getRooms,
     getTeachers } from "../controller/attendenceController.js";
 import cors from "cors";
+import {authMiddleware} from '../middlewares/authMiddleware.js';
 
 router.use(cors());
 
-router.post('/Mark_attendence', Mark_attendence);
+router.post('/Mark_attendence',authMiddleware, Mark_attendence);
 router.post('/create-timetable', createClassSchedule);  // Create new timetable slot
 router.put('/update-timetable/:id', updateClassSchedule);  // Update existing timetable slot
 router.get('/get-timetable', getClassSchedules);  // Get timetable data with filters

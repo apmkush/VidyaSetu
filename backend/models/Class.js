@@ -15,6 +15,11 @@ const ClassSchema = new Schema({
     ref: 'User',
     required: true
   },
+  students: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }],
 
   // Context information (from TimetableSlot)
   context: {
@@ -40,7 +45,7 @@ const ClassSchema = new Schema({
   },
 
   // Class details (from TimetableSlot)
-  room: { type: String, required: true },
+  room: { type: Schema.Types.ObjectId, ref: 'Room', required: true },
   classType: {
     type: String,
     enum: ['lecture', 'lab', 'tutorial', 'seminar'],

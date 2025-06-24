@@ -10,6 +10,7 @@ const StudentAttendanceMark = () => {
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const User = useSelector(state => state.auth.user);
+  const storedToken = useSelector(state => state.auth.token);
   const UserId=User._id;
   useEffect(() => {
     const fetchActiveClasses = async () => {
@@ -71,7 +72,7 @@ const StudentAttendanceMark = () => {
       
       // Verify location accuracy is sufficient (within 20 meters)
       if (location.accuracy > 100) {
-        throw new Error('Your location accuracy is too low. Please enable high accuracy mode.');
+        // throw new Error('Your location accuracy is too low. Please enable high accuracy mode.');
       }
       
       // Send to backend
@@ -82,13 +83,14 @@ const StudentAttendanceMark = () => {
           lng: location.lng
         }
       }, {
-        // headers: {
-        //   Authorization: `Bearer ${localStorage.getItem('token')}`
-        // }
+        headers: {
+          Authorization: `Bearer ${storedToken}`
+        }
       });
       setSuccess(true); 
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      console.log(err);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
 
 const Deadline = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs().startOf('month'));
@@ -7,6 +9,34 @@ const Deadline = () => {
   const [hoveredDate, setHoveredDate] = useState(null);
   const [clickedDate, setClickedDate] = useState(null);
   const [newAssignment, setNewAssignment] = useState('');
+  const storedToken = useSelector(state => state.auth.token);
+
+
+   const getBoxColor = (status) => {
+      if (status === 'completed') return 'bg-green-400';
+      if (status === 'pending') return 'bg-red-400';
+      return 'bg-gray-200';
+    };
+
+  const fetchAssignments = async () => {
+    try {
+      const startDate = currentMonth.startOf('month').format('YYYY-MM-DD');
+      const endDate = currentMonth.endOf('month').format('YYYY-MM-DD');
+      
+      const response = await axios.get('http://localhost:5000/get-assignments', {
+        params: { startDate, endDate },
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+      // console.log(response.data);
+      setAssignments(response.data);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [currentMonth, storedToken]);
 
   const daysInMonth = currentMonth.daysInMonth();
   const startDayOfWeek = currentMonth.day();
@@ -34,35 +64,56 @@ const Deadline = () => {
     setCurrentMonth(currentMonth.add(direction, 'month'));
   };
 
-  const addAssignment = () => {
-    if (!newAssignment) return;
-    const updatedAssignments = { ...assignments };
-    if (!updatedAssignments[clickedDate]) {
-      updatedAssignments[clickedDate] = [];
+  const addAssignment = async () => {
+    if (!newAssignment || !clickedDate) return;
+    try {
+      const response = await axios.post('http://localhost:5000/add-assignments', {
+        date: clickedDate,
+        text: newAssignment
+      }, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+
+      setAssignments(prev => ({
+        ...prev,
+        [clickedDate]: [...(prev[clickedDate] || []), response.data]
+      }));
+      setNewAssignment('');
+    } catch (error) {
+      console.error('Error adding assignment:', error);
     }
-    updatedAssignments[clickedDate].push({ id: Date.now(), text: newAssignment, completed: false });
-    setAssignments(updatedAssignments);
-    setNewAssignment('');
   };
 
-  const toggleAssignment = (date, id) => {
-    const updatedAssignments = { ...assignments };
-    const assignment = updatedAssignments[date].find(task => task.id === id);
-    if (assignment) {
-      assignment.completed = !assignment.completed;
+  const toggleAssignment = async (date, id) => {
+    try {
+      await axios.patch(`http://localhost:5000/update-assignments/${id}`, {}, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+
+      setAssignments(prev => ({
+        ...prev,
+        [date]: prev[date].map(task => 
+          task.id === id ? { ...task, completed: !task.completed } : task
+        )
+      }));
+    } catch (error) {
+      console.error('Error updating assignment:', error);
     }
-    setAssignments(updatedAssignments);
   };
 
-  const deleteAssignment = (date, id) => {
-    const updatedAssignments = { ...assignments };
-    updatedAssignments[date] = updatedAssignments[date].filter(task => task.id !== id); // Remove the task by ID
-    setAssignments(updatedAssignments); // Update the state with the new assignments
-  };
-  const getBoxColor = (status) => {
-    if (status === 'completed') return 'bg-green-400';
-    if (status === 'pending') return 'bg-red-400';
-    return 'bg-gray-200';
+  const deleteAssignment = async (date, id) => {
+    try {
+      await axios.delete(`http://localhost:5000/delete-assignments/${id}`, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+
+      setAssignments(prev => ({
+        ...prev,
+        [date]: prev[date].filter(task => task.id !== id)
+      }));
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+    }
   };
 
   return (

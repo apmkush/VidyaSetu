@@ -86,8 +86,8 @@ function Navbar() {
             </div>
             {openDropdown === 'progress' && (
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
-                <Link to="/progress/study" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Study Progress</Link>
-                <Link to="/progress/chapters" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Chapters</Link>
+                <Link to="/resultSubmission" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Submit Result</Link>
+                <Link to="/resultView" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">View Result</Link>
                 <Link to="/progress/achievements" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Achievements</Link>
               </div>
             )}

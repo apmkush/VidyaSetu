@@ -375,7 +375,7 @@ export const updateClassSchedule = async (req, res) => {
               message: validation.message
           });
       }
-
+ 
       // Check for conflicts (excluding current class)
       const conflictCheck = await checkConflicts(context, schedule, facultyId, room, id);
       if (conflictCheck.hasConflict) {
@@ -465,8 +465,19 @@ export const getClassSchedules = async (req, res) => {
       // Get unique values for filters
       const branches = await ClassModel.distinct('context.branch');
       const sections = await ClassModel.distinct('context.section');
-      const teachers = await ClassModel.distinct('facultyId');
-      const rooms = await ClassModel.distinct('room');
+      const teacherIds = await ClassModel.distinct('facultyId');
+      const teachers = await UserModel.find(
+        { _id: { $in: teacherIds } },
+        { name: 1, email: 1 }
+      ).lean();
+      console.log(teachers);
+      // Get rooms with their details
+      const roomIds = await ClassModel.distinct('room');
+      const rooms = await Room.find(
+        { _id: { $in: roomIds } },
+        { name: 1 }
+      ).lean();
+
       const statuses = await ClassModel.distinct('status');
 
       res.status(200).json({

@@ -28,6 +28,8 @@ const userId = "672cf85cfa2cadcd25bee67d";
 import TimetableSlotForm from './components/TimeTable/TimetableSlotForm.jsx'
 import TimetableView from './components/TimeTable/TimeTableView.jsx'
 import BlogForm from './components/Blog/BlogForm.jsx';
+import ProfessorResultSubmission from './components/Result/ResultSubmission.jsx';
+import StudentTranscript from './components/Result/ResultView.jsx';
 
 // App Routing Setup
 const router = createBrowserRouter([
@@ -87,7 +89,14 @@ const router = createBrowserRouter([
         path : "blogform",
         element: <BlogForm/>
       },
-
+      {
+        path : "resultSubmission",
+        element: <ProfessorResultSubmission/>
+      },
+      {
+        path : "resultView",
+        element: <StudentTranscript/>
+      },
     ]
   }
 ])

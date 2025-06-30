@@ -7,6 +7,7 @@ import eventRoute from './eventRoute.js';
 import messageRoute from "./messageRoute.js";
 import attendanceRoute from "./attendenceRoute.js";
 import blogRoute from "./blogRoute.js";
+import resultRoute from './resultRoute.js';
 
 router.use(authRoute);
 router.use(leaderboardRoute);
@@ -15,6 +16,7 @@ router.use(eventRoute);
 router.use(messageRoute);
 router.use(attendanceRoute);
 router.use(blogRoute);
+router.use(resultRoute);
 
 
 export default router;

@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: function() { return this.userRole === 'student'; }
     },
+    batchYear:{
+        type:Number,
+        required: function() { return this.userRole === 'student'; }
+    },
     dateOfBirth: {
         type: Date
     },

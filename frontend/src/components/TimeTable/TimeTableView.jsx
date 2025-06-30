@@ -7,7 +7,7 @@ const TimetableView = () => {
     const [filters, setFilters] = useState({
         branch: '',
         section: '',
-        teacher: '',
+        teacher: [],
         room: ''
     });
     const [availableFilters, setAvailableFilters] = useState({
@@ -50,6 +50,7 @@ const TimetableView = () => {
             setTimetableData(response.data.data);
             setAvailableFilters(response.data.filters);
             setLoading(false);
+            console.log(availableFilters.teachers);
         } catch (error) {
             console.error('Error fetching timetable:', error);
             setLoading(false);
@@ -68,7 +69,7 @@ const TimetableView = () => {
         if (!editMode) return;
         
         const slot = timetableData.find(item => 
-            item.schedule.day.includes(day) &&
+            item.schedule.days.includes(day) &&
             item.schedule.startTime <= timeSlot.start &&
             item.schedule.endTime >= timeSlot.end
         );
@@ -84,7 +85,7 @@ const TimetableView = () => {
                     section: filters.section || ''
                 },
                 schedule: {
-                    day: [day],
+                    days: [day], 
                     startTime: timeSlot.start,
                     endTime: timeSlot.end,
                     pattern: 'weekly'
@@ -122,7 +123,7 @@ const TimetableView = () => {
                 {slot ? (
                     <>
                         <div className="font-semibold">{slot.subject}</div>
-                        <div>{slot.teacher}</div>
+                        <div>{slot.teacher.name}</div>
                         <div>{slot.room}</div>
                     </>
                 ) : editMode ? (
@@ -179,13 +180,13 @@ const TimetableView = () => {
                         <label className="block mb-2 font-medium">Teacher</label>
                         <select
                             name="teacher"
-                            value={filters.teacher}
+                            value={filters.teacher._id}
                             onChange={handleFilterChange}
                             className="w-full p-2 border rounded"
                         >
                             <option value="">All Teachers</option>
                             {availableFilters.teachers.map(teacher => (
-                                <option key={teacher} value={teacher}>{teacher}</option>
+                                <option key={teacher._id} value={teacher._id}>{teacher.name}</option>
                             ))}
                         </select>
                     </div>

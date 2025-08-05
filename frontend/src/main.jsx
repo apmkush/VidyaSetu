@@ -11,7 +11,7 @@ import store from './store/Store.jsx';
 import Layout from './Layout.jsx';
 import Home from './components/Home/Home.jsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.jsx';
-import Login from './components/Login/Login.jsx'; 
+import Login from './components/Login/login.jsx'; 
 import Signup from './components/Signup/Signup.jsx';
 import Achievement from './components/Achievement/Achievement.jsx';
 import ChatBox from './components/Chat/chat.jsx'

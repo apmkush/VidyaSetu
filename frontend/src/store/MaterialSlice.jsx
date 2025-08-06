@@ -1,11 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
+import{backendUrl}from '../../service/url';
 
 export const fetchMaterialsByBranch = createAsyncThunk(
   'materials/fetchByBranch',
   async (branch, { getState }) => {
     const { token } = getState().auth;
-    const response = await axios.get(`/api/materials/${branch}`, {
+    const response = await axios.get(`${backendUrl}/materials/${branch}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.materials;

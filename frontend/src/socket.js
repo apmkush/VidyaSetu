@@ -1,7 +1,8 @@
 // src/socket.js
 import { io } from "socket.io-client";
+import{backendUrl}from '../src/service/url.js';
 
 // console.log("jnadf");
-const socket = io("http://localhost:5000"); // your backend URL
+const socket = io(`${backendUrl}`); // your backend URL
 
 export default socket;

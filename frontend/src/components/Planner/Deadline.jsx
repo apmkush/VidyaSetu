@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import{backendUrl}from '../../service/url';
 
 const Deadline = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs().startOf('month'));
@@ -23,7 +24,7 @@ const Deadline = () => {
       const startDate = currentMonth.startOf('month').format('YYYY-MM-DD');
       const endDate = currentMonth.endOf('month').format('YYYY-MM-DD');
       
-      const response = await axios.get('http://localhost:5000/get-assignments', {
+      const response = await axios.get(`${backendUrl}/get-assignments`, {
         params: { startDate, endDate },
         headers: { Authorization: `Bearer ${storedToken}` }
       });
@@ -67,7 +68,7 @@ const Deadline = () => {
   const addAssignment = async () => {
     if (!newAssignment || !clickedDate) return;
     try {
-      const response = await axios.post('http://localhost:5000/add-assignments', {
+      const response = await axios.post(`${backendUrl}/add-assignments`, {
         date: clickedDate,
         text: newAssignment
       }, {
@@ -86,7 +87,7 @@ const Deadline = () => {
 
   const toggleAssignment = async (date, id) => {
     try {
-      await axios.patch(`http://localhost:5000/update-assignments/${id}`, {}, {
+      await axios.patch(`${backendUrl}/update-assignments/${id}`, {}, {
         headers: { Authorization: `Bearer ${storedToken}` }
       });
 
@@ -103,7 +104,7 @@ const Deadline = () => {
 
   const deleteAssignment = async (date, id) => {
     try {
-      await axios.delete(`http://localhost:5000/delete-assignments/${id}`, {
+      await axios.delete(`${backendUrl}/delete-assignments/${id}`, {
         headers: { Authorization: `Bearer ${storedToken}` }
       });
 

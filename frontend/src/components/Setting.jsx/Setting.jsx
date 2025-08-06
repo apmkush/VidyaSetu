@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import{backendUrl}from '../../service/url';
 
 const Setting = () => {
     const [settings, setSettings] = useState({

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import{backendUrl}from '../../service/url';
 
 const ProfessorResultSubmission = ({ professorId }) => {
   const [semester, setSemester] = useState('');
@@ -19,7 +20,7 @@ const ProfessorResultSubmission = ({ professorId }) => {
         setLoading(true);
         try {
           const response = await axios.get(
-            `http://localhost:5000/subjects/students`,
+            `${backendUrl}/subjects/students`,
             { 
               params: { semester, subjectName },
               headers: { Authorization: `Bearer ${storedToken}` }
@@ -49,7 +50,7 @@ const ProfessorResultSubmission = ({ professorId }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/submit-results', {
+      await axios.post('${backendUrl}/submit-results', {
         semester,
         subjectName,
         batch, // Added batch to submission

@@ -1,6 +1,7 @@
 import React, { useState, useEffect ,useCallback } from 'react';
 import axios from 'axios';
 import TimetableSlotForm from './TimetableSlotForm';
+import{backendUrl}from '../../service/url';
 
 const TimetableView = () => {
     const [timetableData, setTimetableData] = useState([]);
@@ -44,7 +45,7 @@ const TimetableView = () => {
     const fetchTimetableData = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('http://localhost:5000/get-timetable', {
+            const response = await axios.get(`${backendUrl}/get-timetable`, {
                 params: filters
             });
             setTimetableData(response.data.data);

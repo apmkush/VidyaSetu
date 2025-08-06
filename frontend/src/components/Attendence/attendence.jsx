@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSelector } from 'react-redux';
+import{backendUrl}from '../../service/url';
 
 const StudentAttendanceMark = () => {
   const [classId, setClassId] = useState('');
@@ -16,7 +17,7 @@ const StudentAttendanceMark = () => {
     const fetchActiveClasses = async () => {
       try {
         setLoadingClasses(true);
-        const response = await axios.get(`http://localhost:5000/get-activeClasses/${UserId}`, {
+        const response = await axios.get(`${backendUrl}/get-activeClasses/${UserId}`, {
           // headers: {
           //   Authorization: `Bearer ${User._id}`
           // }
@@ -76,7 +77,7 @@ const StudentAttendanceMark = () => {
       }
       
       // Send to backend
-      await axios.post('http://localhost:5000/Mark_attendence', {
+      await axios.post(`${backendUrl}/Mark_attendence`, {
         classId,
         studentLocation: {
           lat: location.lat,

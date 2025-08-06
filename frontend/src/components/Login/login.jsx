@@ -7,13 +7,14 @@ import { useDispatch, useSelector } from "react-redux";
 import {  loginStart,  loginSuccess,  loginFailure,} from "../../store/authSlice";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import{backendUrl}from '../../service/url';
 
 function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
 
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -45,7 +46,7 @@ function Login() {
     dispatch(loginStart());
     try {
       const response = await axios.post(
-        "http://localhost:5000/login",
+        `${backendUrl}/login`,
         formData
       );
 
@@ -73,7 +74,7 @@ function Login() {
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
-      const res = await axios.post("http://localhost:8000/api/user/googlelogin", {
+      const res = await axios.post(`${backendUrl}/api/user/googlelogin`, {
         token: credentialResponse.credential,
       });
 

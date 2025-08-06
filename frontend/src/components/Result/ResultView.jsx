@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { saveAs } from 'file-saver';
+import{backendUrl}from '../../service/url';
 
 const StudentTranscript = () => {
   const [transcriptData, setTranscriptData] = useState(null);
@@ -17,7 +18,7 @@ const StudentTranscript = () => {
     const fetchTranscriptData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`http://localhost:5000/get-result`, {
+        const response = await axios.get(`${backendUrl}/get-result`, {
           headers: { Authorization: `Bearer ${storedToken}` }
         });
         setTranscriptData(response.data);
@@ -76,7 +77,7 @@ const StudentTranscript = () => {
   const handleDownloadPDF = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/get-transcript/pdf`, 
+        `${backendUrl}/get-transcript/pdf`, 
         {
           responseType: 'blob',
           headers: { Authorization: `Bearer ${storedToken}` }

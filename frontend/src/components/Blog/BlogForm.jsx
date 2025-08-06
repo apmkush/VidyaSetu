@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { CheckCircle2 } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
+import{backendUrl}from '../../service/url';
 
 export default function BlogForm() {
   const {
@@ -26,7 +27,7 @@ export default function BlogForm() {
    
 
     try {
-      const response = await axios.post('http://localhost:5000/createblogform', formData, {
+      const response = await axios.post(`${backendUrl}/createblogform`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

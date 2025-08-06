@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import axios from 'axios'; 
+import{backendUrl}from '../../service/url';
 
 function Darkmode() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const { token } = useSelector((state) => state.auth);
 
   
   useEffect(() => {  // Fetch user's theme preference from the backend when the component mounts
     const fetchUserTheme = async () => {
       try {
-        const response = await axios.get('/api/user/theme'); // Replace it with your API endpoint
-        const userTheme = response.data.theme; // Assume the API returns { theme: 'dark' | 'light' }
+        const response = await axios.get(`${backendUrl}/get-theme`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }); // Replace it with your API endpoint
+        // const userTheme = response.data.theme; // Assume the API returns { theme: 'dark' | 'light' }
         
         // Set the theme based on the backend response
-        if (userTheme === 'dark') {
+        if (response.data.theme) {
           setIsDarkMode(true);
           document.documentElement.classList.add('dark');
         } else {
@@ -32,11 +38,15 @@ function Darkmode() {
 
     // Update the theme in the document and in state
     setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    document.documentElement.classList.toggle('dark', isDarkMode);
 
     // Save the new theme to the backend
     try {
-      await axios.post('/api/user/theme', { theme: newTheme }); // Replace with your API endpoint
+      const res=await axios.post(`${backendUrl}/update-theme`,
+           { theme: isDarkMode },{
+          headers: { Authorization: `Bearer ${token}` },
+        }); // Replace with your API endpoint
+      console.log(res.data);
     } catch (error) {
       console.error('Error saving user theme:', error);
     }

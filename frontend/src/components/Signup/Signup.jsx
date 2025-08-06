@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { CheckCircle2 } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
+import{backendUrl}from '../../service/url';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const Signup = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://localhost:5000/singup', data, {
+      const response = await axios.post(`${backendUrl}/singup`, data, {
         headers: { 'Content-Type': 'application/json' },
       });
 

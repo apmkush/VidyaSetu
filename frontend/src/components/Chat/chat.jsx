@@ -4,6 +4,7 @@ import socket from "../../socket";
 import axios from "axios";
 import { useSelector } from 'react-redux';
 import {FileIcon} from 'react-file-icon';
+import{backendUrl}from '../../service/url';
 
 const ChatBox = () => {
   
@@ -20,7 +21,7 @@ const ChatBox = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/chat/users",{currentUserId});
+      const res = await axios.get(`${backendUrl}/chat/users`,{currentUserId});
       // Exclude self from list
       const others = res.data.filter(user => user._id !== currentUserId);
       setUsers(others);
@@ -36,7 +37,7 @@ const ChatBox = () => {
     const fetchMessages = async () => {
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/getMessages/${receiverId}`,
+          `${backendUrl}/getMessages/${receiverId}`,
           {
             params: { currentUserId },
             headers: {
@@ -87,7 +88,7 @@ const ChatBox = () => {
   const handleDeleteMessage = async (messageId) => {
     try {
       // Call your API to delete the message
-      await axios.delete(`http://localhost:5000/DeleteMsg/${messageId}`, {
+      await axios.delete(`${backendUrl}/DeleteMsg/${messageId}`, {
         headers: {
           // Include auth token if needed
           // Authorization: `Bearer ${token}`,
@@ -136,7 +137,7 @@ const ChatBox = () => {
   
         // Send to backend
         const res = await axios.post(
-          `http://localhost:5000/sendMessage/${receiverId}`,
+          `${backendUrl}/sendMessage/${receiverId}`,
           { 
             text: message,
             senderId: currentUserId,
@@ -154,7 +155,7 @@ const ChatBox = () => {
       } else {
         // Text-only message
         await axios.post(
-          `http://localhost:5000/sendMessage/${receiverId}`,
+          `${backendUrl}/sendMessage/${receiverId}`,
           { 
             text: message,
             senderId: currentUserId 

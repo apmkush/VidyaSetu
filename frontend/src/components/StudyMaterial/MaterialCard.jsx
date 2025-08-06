@@ -3,6 +3,7 @@ import { Card, CardContent, Typography, Button, CardActions, Avatar } from '@mui
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
 import GetAppIcon from '@mui/icons-material/GetApp';
+import{backendUrl}from '../../service/url';
 
 const MaterialCard = ({ material }) => {
   const getFileIcon = () => {

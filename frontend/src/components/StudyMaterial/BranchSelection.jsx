@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Grid, Card, CardContent, Typography, Button } from '@mui/material';
+import{backendUrl}from '../../service/url';
 
 const branches = [
   { id: 'ece', name: 'Electronics & Communication' },

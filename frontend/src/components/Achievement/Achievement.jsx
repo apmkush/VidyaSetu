@@ -3,6 +3,7 @@ import axios, { Axios } from 'axios';
 import { Line } from 'react-chartjs-2';
 import { ToastContainer, toast } from 'react-toastify';
 import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement } from 'chart.js';
+import{backendUrl}from '../../service/url';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
@@ -36,7 +37,7 @@ const Achievement = ({ userId }) => {
 
   const fetchAchievements = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/achievements/${userId}`);
+      const response = await fetch(`${backendUrl}/achievements/${userId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -58,7 +59,7 @@ const Achievement = ({ userId }) => {
   const handleAddAchievement = async (e) => {
     e.preventDefault();
     try{
-      const response=await axios.put('http://localhost:5000/addPoints',{
+      const response=await axios.put(`${backendUrl}/addPoints`,{
           regno:parseInt(newAchievement.regno),
           newPoints:parseInt(newAchievement.auraPoints),
       },{

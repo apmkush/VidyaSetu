@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BsLinkedin, BsGithub, BsTwitter } from 'react-icons/bs';
 import axios from 'axios';
+import{backendUrl}from '../../service/url';
 
 const PersonalInfo = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -58,7 +59,7 @@ const PersonalInfo = () => {
     });
 
     try {
-      await axios.post('/api/user/profile', formData, {
+      await axios.post(`${backendUrl}/user/profile`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setIsEditing(false); // Exit edit mode after saving

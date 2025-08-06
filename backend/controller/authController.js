@@ -215,3 +215,35 @@ export const resetPassword = async (req, res) => {
     return res.json({ message: "Internal server error" });
   }
 };
+
+export const updateMode = async (req, res) => {
+  const {theme } = req.body;
+
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { dark:theme },
+      { new: true }
+    );
+    res.json({ message: 'Preferences updated successfully', user });
+  } catch (error) {
+    res.json({ message: 'Error updating preferences', error });
+  }
+};
+
+export const getTheme = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await UserModel.findById(userId).select('dark'); // only fetch the 'theme' field
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({ theme: user.dark });
+  } catch (error) {
+    console.error('Error fetching user theme:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};

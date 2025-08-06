@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import{backendUrl}from '../../service/url';
 
 const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
   const branches = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'];
@@ -36,8 +37,8 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
     const fetchData = async () => {
       try {
         const [teachersRes, roomsRes] = await Promise.all([
-          axios.get('http://localhost:5000/get-teachers'),
-          axios.get('http://localhost:5000/get-rooms')
+          axios.get(`${backendUrl}/get-teachers`),
+          axios.get(`${backendUrl}/get-rooms`)
         ]);
         setTeachers(teachersRes.data.data);
         setRooms(roomsRes.data.data);
@@ -89,8 +90,8 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
     
     try {
       const url = slot._id 
-        ? `http://localhost:5000/update-timetable/${slot._id}`
-        : 'http://localhost:5000/create-timetable';
+        ? `${backendUrl}/update-timetable/${slot._id}`
+        : `${backendUrl}/create-timetable`;
       
       const method = slot._id ? 'put' : 'post';
       
@@ -126,7 +127,7 @@ const TimetableSlotForm = ({ slotData, onSuccess, onCancel }) => {
     
     try {
       setSubmitting(true);
-      await axios.delete(`http://localhost:5000/delete-timetable/${slot._id}`);
+      await axios.delete(`${backendUrl}/delete-timetable/${slot._id}`);
       onSuccess?.();
     } catch (error) {
       alert(`Error deleting slot: ${error.response?.data?.message || error.message}`);

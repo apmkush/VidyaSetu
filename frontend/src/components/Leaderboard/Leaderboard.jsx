@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios, { Axios } from 'axios';
+import{backendUrl}from '../../service/url';
 
 
 
@@ -11,7 +12,7 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/getPoints");
+        const res = await axios.get(`${backendUrl}/getPoints`);
         setLeaderboardData(res.data); // Set the fetched data to state
         console.log("Data received successfully");
       } catch (error) {

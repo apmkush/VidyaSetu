@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { CheckCircle2 } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
-import{backendUrl}from '../../service/url';
+import { backendUrl } from '../../service/url';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ const Signup = () => {
       if (response.data.success) {
         toast.success('Signup successful!');
         setShowSuccess(true);
-        reset(); // Clear form fields
+        reset();
 
         setTimeout(() => {
           navigate('/login');
@@ -63,13 +63,12 @@ const Signup = () => {
         <h2 className="text-2xl font-bold text-center text-blue-600">Sign Up for VidyaSetu</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         
-        <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Upload Profile Image</label>
             <input
               type="file"
               {...register('photo')}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              
             />
             {errors.photo && <p className="text-red-500 text-sm">{errors.photo.message}</p>}
           </div>
@@ -125,6 +124,22 @@ const Signup = () => {
               placeholder="Enter your reg no"
             />
             {errors.regno && <p className="text-red-500 text-sm">{errors.regno.message}</p>}
+          </div>
+
+          {/*  Batch Year  */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Batch Year</label>
+            <input
+              type="number"
+              {...register('batchYear', { 
+                required: 'Batch year is required', 
+                min: { value: 2000, message: 'Enter a valid year' }, 
+                max: { value: new Date().getFullYear() + 6, message: 'Enter a valid year' }
+              })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your batch year (e.g., 2025)"
+            />
+            {errors.batchYear && <p className="text-red-500 text-sm">{errors.batchYear.message}</p>}
           </div>
 
           {/* Branch Selection */}

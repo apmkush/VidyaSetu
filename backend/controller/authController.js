@@ -47,6 +47,7 @@ export const signup = async (req, res) => {
         password:req.body.password,
         confirm_password:req.body.confirm_password,
         regno:req.body.regno,
+        batchYear:req.body.batchYear,
         branch:req.body.branch,
         semester:req.body.semester,
         section:req.body.section

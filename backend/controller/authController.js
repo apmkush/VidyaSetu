@@ -6,6 +6,7 @@ import { validationResult } from "express-validator";
 import nodemailer from "nodemailer";
 import {UserModel} from "../models/user.js";
 import { generateToken, verifyToken, generateTempToken } from "../config/secret.js";
+import { OAuth2Client } from "google-auth-library";
 
 export const login = async (req, res) => {
     const data={
@@ -248,3 +249,47 @@ export const getTheme = async (req, res) => {
     return res.status(500).json({ error: 'Server error' });
   }
 };
+
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+export const googleLogin = async (req, res) =>{
+  
+  try {
+    const token = req.headers.authorization;
+    if (!token) {
+        return res.status(400).json({ success: false, message: "Token missing" });
+    }
+
+    // Verify token using Google's API
+    // const googleResponse = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+    // const { email, name, picture, sub } = googleResponse.data; // Extract user info
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, // Must match the frontend client ID
+    });
+
+    const { email, name, picture, sub } = ticket.getPayload();
+    // console.log(email);
+
+    if (!email) {
+        return res.status(401).json({ success: false, message: "Invalid token" });
+    }
+
+    // Check if user exists in the database
+    let user = await UserModel.findOne({ email });
+
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+    user.password=undefined;
+    const authToken = generateToken(user.id);
+    // Generate a new session token (optional, if you want to maintain session-based auth)
+    return res.json({ success: true, user:user,token:authToken });
+
+  } catch (error) {
+      console.error("Google Auth Error:", error);
+      return res.status(401).json({ success: false, message: "Invalid or expired token" });
+  }
+}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleOAuthProvider,GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useDispatch, useSelector } from "react-redux";
 import {  loginStart,  loginSuccess,  loginFailure,} from "../../store/authSlice";
@@ -71,35 +71,29 @@ function Login() {
     }
   };
 
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      const res = await axios.post(`${backendUrl}/api/user/googlelogin`, {
-        token: credentialResponse.credential,
-      });
-
-      if (res.data.success) {
-        DisplayMessage("Login successful via Google");
-        dispatch(
-          loginSuccess({
-            user: res.data.user,
-            token: res.data.token,
-          })
-        );
-        setTimeout(() => {
-          navigate("/");
-        }, 2000);
-      } else {
-        DisplayMessage(res.data.message, "error");
-        dispatch(loginFailure(res.data.message));
-      }
-    } catch (error) {
-      const message =
-        error.response?.data?.message || "Google login failed";
-      DisplayMessage(message, "error");
-      dispatch(loginFailure(message));
-    }
-  };
+  const handleLoginSuccess = async (credentialResponse) => {
+        const token = credentialResponse.credential;
+        // console.log(token);
+        const userDetails = jwtDecode(token);
+        // console.log(userDetails);
+        // Further token handling can be added here if necessary
+        const response = await axios.get(`${backendUrl}/google-login`,
+            {
+              headers: {
+                  Authorization: `${token}`, // Send JWT token in headers
+              },
+          });
+          if(response.data.success){
+            console.log(response.data); 
+            dispatch(loginSuccess({ user: response.data.user, token: response.data.token }));
+            DisplayMessage("Login successfully!!");
+            setTimeout(() => {
+                navigate('/');
+            }, 2000);
+          }else{
+            console.log(response.data.message);
+          }
+    };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -154,9 +148,20 @@ function Login() {
           <span>or login with</span>
         </div>
 
-        <div className="flex justify-center mt-2">
+        {/* <div className="flex justify-center mt-2">
           <GoogleLogin onSuccess={handleGoogleLogin} onError={() => DisplayMessage("Google login failed", "error")} />
-        </div>
+        </div> */}
+        <GoogleOAuthProvider clientId="35549278582-em44n646f5im5rhh4v8j9ksui6gpmsmn.apps.googleusercontent.com">
+            <div className="App">
+                <h2>Login with Google</h2>
+                <GoogleLogin
+                    onSuccess={handleLoginSuccess}
+                    onError={() => DisplayMessage("Google login failed", "error")}
+                    useOneTap
+                />
+                {/* <button onClick={() => googleLogout()}>Logout</button> */}
+            </div>
+        </GoogleOAuthProvider>
       </form>
     </div>
   );

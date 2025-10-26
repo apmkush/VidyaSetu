@@ -6,11 +6,9 @@ const { Types: { ObjectId } } = mongoose;
 import cloudinary from "../config/cloudinary.js";
 import { getReceiverSocketId, io } from "../config/socket.js";
 
-
-
 export const getUsersForSidebar = async (req, res) => {
   try {
-    const UserId = req.body.currentUserId;
+    const UserId = req.user._id;
     const filteredUsers = await UserModel.find({ _id: { $ne: UserId } }).select("-password");
 
     res.status(200).json(filteredUsers);
@@ -21,19 +19,18 @@ export const getUsersForSidebar = async (req, res) => {
 };
 
 export const getMessages = async (req, res) => {
-    // Convert all string IDs to ObjectId
   try {
     const { id: userToChatId } = req.params;
     const myId = new mongoose.Types.ObjectId(req.query.currentUserId);
-    const nextId=new mongoose.Types.ObjectId(userToChatId);
-    // console.log(myId);
+    const nextId = new mongoose.Types.ObjectId(userToChatId);
 
     const messages = await Message.find({
       $or: [
         { senderId: myId, receiverId: nextId },
         { senderId: nextId, receiverId: myId },
       ],
-    });
+    }).sort({ createdAt: 1 }); // Sort by creation time
+
     res.status(200).json(messages);
   } catch (error) {
     console.log("Error in getMessages controller: ", error.message);
@@ -42,110 +39,218 @@ export const getMessages = async (req, res) => {
 };
 
 export const sendMessage = async (req, res) => {
-    try {
-      const { text, file, senderId, fileType } = req.body;
-      const { id: receiverId } = req.params;
-  
-      let fileUrl;
-      if (file) {
-        // Upload base64 file to Cloudinary with appropriate resource type
-        const uploadOptions = {
-          resource_type: 'auto', // ← Crucial for non-images
-          folder: 'chat_files',
-          use_filename: true // Automatically detect image/video/raw
-        };
-  
-        // Add file type specific transformations if needed
-        if (fileType.startsWith('image/')) {
-          uploadOptions.format = 'webp'; // Optional: convert images to webp
-        }
-        // Add this to your upload options for videos
-        if (fileType.startsWith('video/')) {
-          uploadOptions.transformation = [
-            { quality: 'auto' },
-            { format: 'mp4' },
-            { codec: 'h264' }
-          ];
-}
-  
-        const uploadResponse = await cloudinary.uploader.upload(
-          `data:${fileType};base64,${file}`,
-          uploadOptions
-        );
-        
-        fileUrl = {
-          url: uploadResponse.secure_url,
-          resource_type: uploadResponse.resource_type // 'image', 'video', 'raw' etc.
-        };
-        console.log(fileUrl);
+  try {
+    const { text, file, senderId, fileType } = req.body;
+    const { id: receiverId } = req.params;
+
+    let fileUrl;
+    if (file) {
+      const uploadOptions = {
+        resource_type: 'auto',
+        folder: 'chat_files',
+        use_filename: true
+      };
+
+      if (fileType.startsWith('image/')) {
+        uploadOptions.format = 'webp';
       }
-  
-      const newMessage = new Message({
-        senderId,
-        receiverId,
-        text,
-        file: fileUrl?.url, // Store the URL
-        fileType: fileUrl ? fileType : null,
-        fileResourceType: fileUrl?.resource_type
-      });
-  
-      await newMessage.save();
-  
-      const receiverSocketId = getReceiverSocketId(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("receiveMessage", newMessage);
+      if (fileType.startsWith('video/')) {
+        uploadOptions.transformation = [
+          { quality: 'auto' },
+          { format: 'mp4' },
+          { codec: 'h264' }
+        ];
       }
-  
-      res.status(201).json(newMessage);
-    } catch (error) {
-      console.log("Error in sendMessage controller: ", error.message);
-      res.status(500).json({ error: "Internal server error" });
+
+      const uploadResponse = await cloudinary.uploader.upload(
+        `data:${fileType};base64,${file}`,
+        uploadOptions
+      );
+      
+      fileUrl = {
+        url: uploadResponse.secure_url,
+        resource_type: uploadResponse.resource_type
+      };
     }
-  };
+
+    const newMessage = new Message({
+      senderId,
+      receiverId,
+      text,
+      file: fileUrl?.url,
+      fileType: fileUrl ? fileType : null,
+      fileResourceType: fileUrl?.resource_type,
+      status: 'sent'
+    });
+
+    await newMessage.save();
+
+    // Update message status to delivered if receiver is online
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      newMessage.status = 'delivered';
+      newMessage.deliveredAt = new Date();
+      await newMessage.save();
+    }
+
+    // Emit to receiver
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("receiveMessage", newMessage);
+      // Also emit delivery status update to sender
+      io.to(getReceiverSocketId(senderId)).emit("messageStatusUpdate", {
+        messageId: newMessage._id,
+        status: 'delivered',
+        deliveredAt: newMessage.deliveredAt
+      });
+    }
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    console.log("Error in sendMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 // Delete message endpoint
 export const deleteMessage = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Optional: Verify the requester is the message sender
     const message = await Message.findById(id);
     if (!message) {
       return res.status(404).json({ error: "Message not found" });
     }
     
-    // Optional: Add authentication check here
-    // if (message.senderId.toString() !== req.user._id.toString()) {
-    //   return res.status(403).json({ error: "Unauthorized" });
-    // }
     if (message.file) {
       try {
-        // Extract public ID from Cloudinary URL
         const urlParts = message.file.split('/');
         const publicIdWithExtension = urlParts.slice(urlParts.indexOf('upload') + 1).join('/');
-        const publicId = publicIdWithExtension.split('.')[0]; // Remove file extension
+        const publicId = publicIdWithExtension.split('.')[0];
         
-        // Delete the resource from Cloudinary
         await cloudinary.uploader.destroy(publicId, {
-          resource_type: message.fileResourceType || 'auto', // Use stored resource type or auto-detect
-          invalidate: true // Optional: invalidate CDN cache
+          resource_type: message.fileResourceType || 'auto',
+          invalidate: true
         });
-        
-        console.log(`Deleted media from Cloudinary: ${publicId}`);
       } catch (cloudinaryError) {
         console.error("Error deleting from Cloudinary:", cloudinaryError);
-        // Continue with message deletion even if Cloudinary deletion fails
       }
     }
-    // Delete from database
+    
     await Message.findByIdAndDelete(id);
     
-    // Notify other clients via socket
     io.emit("messageDeleted", id);
     
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error deleting message:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const targetUserId = req.params.userId;
+
+    const unreadCount = await Message.countDocuments({
+      senderId: targetUserId,
+      receiverId: currentUserId,
+      readBy: { $ne: currentUserId }
+    });
+
+    res.status(200).json({ unreadCount });
+  } catch (error) {
+    console.error("Unread count error:", error);
+    res.status(500).json({ error: "Failed to fetch unread count" });
+  }
+};
+
+export const markAsRead = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const targetUserId = req.params.userId;
+
+    // Update all unread messages
+    const updatedMessages = await Message.updateMany(
+      {
+        senderId: targetUserId,
+        receiverId: currentUserId,
+        readBy: { $ne: currentUserId }
+      },
+      {
+        $addToSet: { readBy: currentUserId },
+        $set: { 
+          status: 'read',
+          readAt: new Date()
+        }
+      }
+    );
+
+    // Notify sender that messages have been read
+    const messages = await Message.find({
+      senderId: targetUserId,
+      receiverId: currentUserId,
+      readBy: currentUserId
+    });
+
+    // Emit status updates for each message
+    messages.forEach(message => {
+      const senderSocketId = getReceiverSocketId(message.senderId);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messageStatusUpdate", {
+          messageId: message._id,
+          status: 'read',
+          readAt: message.readAt
+        });
+      }
+    });
+
+    res.status(200).json({ success: true, updatedCount: updatedMessages.modifiedCount });
+  } catch (error) {
+    console.error("Mark as read error:", error);
+    res.status(500).json({ error: "Failed to mark as read" });
+  }
+};
+
+// New: Update message delivery status
+export const updateMessageStatus = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { status } = req.body;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    const updates = { status };
+    if (status === 'delivered') {
+      updates.deliveredAt = new Date();
+    } else if (status === 'read') {
+      updates.readAt = new Date();
+      updates.readBy = [req.user._id];
+    }
+
+    const updatedMessage = await Message.findByIdAndUpdate(
+      messageId,
+      updates,
+      { new: true }
+    );
+
+    // Notify the sender about status update
+    const senderSocketId = getReceiverSocketId(updatedMessage.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageStatusUpdate", {
+        messageId: updatedMessage._id,
+        status: updatedMessage.status,
+        deliveredAt: updatedMessage.deliveredAt,
+        readAt: updatedMessage.readAt
+      });
+    }
+
+    res.status(200).json(updatedMessage);
+  } catch (error) {
+    console.error("Update message status error:", error);
+    res.status(500).json({ error: "Failed to update message status" });
   }
 };

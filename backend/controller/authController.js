@@ -40,42 +40,95 @@ export const login = async (req, res) => {
     }
 };
 
+// export const signup = async (req, res) => {
+//     const data = {
+//         name:req.body.name,
+//         email:req.body.email,
+//         phone:req.body.tel,
+//         password:req.body.password,
+//         confirm_password:req.body.confirm_password,
+//         regno:req.body.regno,
+//         batchYear:req.body.batchYear,
+//         branch:req.body.branch,
+//         semester:req.body.semester,
+//         section:req.body.section
+//     };
+//     console.log(data);
+//     try{
+//         const existingUser = await UserModel.findOne({email: data.email});
+//         if(data.password!=data.confirm_password){
+//             res.json({success:false,message:"Passwords does not match!!"});
+//         }
+//         else if(existingUser){
+//             res.json({success:false,message:"User already exists.Please enter different email"});
+//         }else{
+//             const saltRounds = 10;
+//             const hashedPassword = await bcrypt.hash(data.password,saltRounds);
+//             data.password = hashedPassword;
+//             const userdata = await UserModel.insertMany(data);
+//             // const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+//             console.log(userdata);
+//             const authToken = generateToken(userdata.id);
+//             res.json({success:true,message:"Singup successful!!",token:authToken});
+//         }
+//     }catch(e){
+//         console.log(e);
+//         res.json({success:false,message:"Something went wrong!!"});
+//     }
+//     };
+
+// new signup which also handles the user role 
 export const signup = async (req, res) => {
     const data = {
-        name:req.body.name,
-        email:req.body.email,
-        phone:req.body.tel,
-        password:req.body.password,
-        confirm_password:req.body.confirm_password,
-        regno:req.body.regno,
-        batchYear:req.body.batchYear,
-        branch:req.body.branch,
-        semester:req.body.semester,
-        section:req.body.section
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.tel,
+        password: req.body.password,
+        confirm_password: req.body.confirm_password,
+        regno: req.body.regno,
+        batchYear: req.body.batchYear,
+        branch: req.body.branch,
+        semester: req.body.semester,
+        section: req.body.section,
+        userRole: req.body.userRole || 'student' // Add userRole with default
     };
-    console.log(data);
-    try{
-        const existingUser = await UserModel.findOne({email: data.email});
-        if(data.password!=data.confirm_password){
-            res.json({success:false,message:"Passwords does not match!!"});
+    
+    console.log("Signup data:", data);
+    
+    try {
+        const existingUser = await UserModel.findOne({ email: data.email });
+        
+        if (data.password != data.confirm_password) {
+            return res.json({ success: false, message: "Passwords do not match!!" });
         }
-        else if(existingUser){
-            res.json({success:false,message:"User already exists.Please enter different email"});
-        }else{
+        else if (existingUser) {
+            return res.json({ success: false, message: "User already exists. Please enter different email" });
+        } else {
+            // Validate required fields based on user role
+            if (data.userRole === 'student') {
+                if (!data.batchYear || !data.branch || !data.semester || !data.section) {
+                    return res.json({ success: false, message: "All student fields are required" });
+                }
+            }
+            
             const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(data.password,saltRounds);
+            const hashedPassword = await bcrypt.hash(data.password, saltRounds);
             data.password = hashedPassword;
-            const userdata = await UserModel.insertMany(data);
-            // const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
-            console.log(userdata);
-            const authToken = generateToken(userdata.id);
-            res.json({success:true,message:"Singup successful!!",token:authToken});
+            
+            // Remove confirm_password before saving to database
+            delete data.confirm_password;
+            
+            const userdata = await UserModel.create(data);
+            console.log("User created:", userdata);
+            
+            const authToken = generateToken(userdata._id);
+            res.json({ success: true, message: "Signup successful!!", token: authToken });
         }
-    }catch(e){
-        console.log(e);
-        res.json({success:false,message:"Something went wrong!!"});
+    } catch (e) {
+        console.log("Signup error:", e);
+        res.json({ success: false, message: "Something went wrong!!" });
     }
-    };
+};
 
 
 //Authenticate the email id and password from which mail will be sent

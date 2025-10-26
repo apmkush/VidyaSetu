@@ -1,7 +1,8 @@
-import express, { json } from "express";
+ import express, { json } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import Message from "../models/message.js";
+import Group from "../models/Group.js";
 
 const app = express();
 const server = createServer(app);
@@ -22,32 +23,53 @@ export function getReceiverSocketId(userId) {
 }
 
 const users = {};
+const userGroups = {}; // Track which groups users are in
 
 io.on("connection", (socket) => {
   console.log("🟢 New client connected:", socket.id);
 
   // User joins
-  socket.on("join", (userId) => {
+  socket.on("join", async (userId) => {
     users[userId] = socket.id;
     console.log(`${userId} joined with socket id ${socket.id}`);
-    io.emit("getOnlineUsers", Object.keys(users));
     
-    // Update delivery status for pending messages when user comes online
+    // Join user to their groups
+    try {
+      const groups = await Group.find({ members: userId });
+      groups.forEach(group => {
+        socket.join(`group_${group._id}`);
+      });
+      userGroups[userId] = groups.map(g => g._id.toString());
+    } catch (error) {
+      console.error("Error joining user to groups:", error);
+    }
+    
+    io.emit("getOnlineUsers", Object.keys(users));
     updatePendingMessageStatus(userId);
   });
 
-  // Send message
+  // Join a specific group
+  socket.on("joinGroup", (groupId) => {
+    socket.join(`group_${groupId}`);
+    console.log(`User joined group: ${groupId}`);
+  });
+
+  // Leave a group
+  socket.on("leaveGroup", (groupId) => {
+    socket.leave(`group_${groupId}`);
+    console.log(`User left group: ${groupId}`);
+  });
+
+  // Send individual message
   socket.on("sendMessage", async (message) => {
     try {
       const receiverSocketId = getReceiverSocketId(message.receiverId);
       if (receiverSocketId) {
-        // Update message status to delivered
         await Message.findByIdAndUpdate(message._id, {
           status: 'delivered',
           deliveredAt: new Date()
         });
         
-        // Notify sender about delivery
         const senderSocketId = getReceiverSocketId(message.senderId);
         if (senderSocketId) {
           io.to(senderSocketId).emit("messageStatusUpdate", {
@@ -68,7 +90,22 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Delete message
+  // Send group message
+  socket.on("sendGroupMessage", async (message) => {
+    try {
+      // Emit to all members in the group
+      io.to(`group_${message.groupId}`).emit("receiveGroupMessage", {
+        ...message,
+        status: 'delivered'
+      });
+      
+      console.log(`Group message sent to group: ${message.groupId}`);
+    } catch (error) {
+      console.error("Socket sendGroupMessage error:", error);
+    }
+  });
+
+  // Delete individual message
   socket.on("deleteMessage", async ({ messageId, receiverId }) => {
     try {
       const receiverSocketId = getReceiverSocketId(receiverId);
@@ -77,6 +114,15 @@ io.on("connection", (socket) => {
       }
     } catch (error) {
       console.error("Socket deleteMessage error:", error);
+    }
+  });
+
+  // Delete group message
+  socket.on("deleteGroupMessage", async ({ messageId, groupId }) => {
+    try {
+      io.to(`group_${groupId}`).emit("groupMessageDeleted", messageId);
+    } catch (error) {
+      console.error("Socket deleteGroupMessage error:", error);
     }
   });
 
@@ -91,7 +137,6 @@ io.on("connection", (socket) => {
           $addToSet: { readBy: readerId }
         });
 
-        // Notify sender
         const senderSocketId = getReceiverSocketId(message.senderId);
         if (senderSocketId) {
           io.to(senderSocketId).emit("messageStatusUpdate", {
@@ -106,11 +151,38 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Group created - notify members
+  socket.on("groupCreated", (group) => {
+    group.members.forEach(memberId => {
+      const memberSocketId = getReceiverSocketId(memberId.toString());
+      if (memberSocketId) {
+        io.to(memberSocketId).emit("newGroup", group);
+      }
+    });
+  });
+
+  // Member added to group
+  socket.on("memberAdded", ({ groupId, memberId }) => {
+    const memberSocketId = getReceiverSocketId(memberId);
+    if (memberSocketId) {
+      io.to(memberSocketId).emit("addedToGroup", groupId);
+    }
+  });
+
+  // Member removed from group
+  socket.on("memberRemoved", ({ groupId, memberId }) => {
+    const memberSocketId = getReceiverSocketId(memberId);
+    if (memberSocketId) {
+      io.to(memberSocketId).emit("removedFromGroup", groupId);
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("🔴 Client disconnected:", socket.id);
     for (let userId in users) {
       if (users[userId] === socket.id) {
         delete users[userId];
+        delete userGroups[userId];
         break;
       }
     }
@@ -132,7 +204,6 @@ async function updatePendingMessageStatus(userId) {
         deliveredAt: new Date()
       });
 
-      // Notify sender
       const senderSocketId = getReceiverSocketId(message.senderId);
       if (senderSocketId) {
         io.to(senderSocketId).emit("messageStatusUpdate", {

@@ -1,4 +1,3 @@
-// src/components/ChatBox.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import socket from "../../socket";
@@ -11,19 +10,41 @@ import { toast } from 'react-toastify';
 const ChatBox = () => {
   const { token, user } = useSelector(state => state.auth);
   const currentUserId = user?._id;
+  const currentUserRole = user?.userRole;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const initialReceiverId = searchParams.get('user');
+  const initialGroupId = searchParams.get('group');
 
   const [usersWithUnread, setUsersWithUnread] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(initialReceiverId || null);
+  const [groupId, setGroupId] = useState(initialGroupId || null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showGroupDetailsModal, setShowGroupDetailsModal] = useState(false);
+  const [newGroup, setNewGroup] = useState({
+    name: "",
+    description: "",
+    memberIds: [],
+    isClassGroup: false,
+    classInfo: {
+      branch: "",
+      semester: "",
+      section: "",
+      batchYear: new Date().getFullYear()
+    }
+  });
+  const [availableStudents, setAvailableStudents] = useState([]);
+  const [chatType, setChatType] = useState('individual'); // 'individual' or 'group'
+
   const chatEndRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -53,7 +74,10 @@ const ChatBox = () => {
       const res = await axios.get(`${backendUrl}/chat/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const others = res.data.filter(user => user._id !== currentUserId);
+      
+      const usersData = res.data.users || res.data;
+      const others = usersData.filter(user => user._id !== currentUserId);
+      const groupsData = res.data.groups || [];
 
       const usersWithCounts = await Promise.all(
         others.map(async (user) => {
@@ -61,18 +85,80 @@ const ChatBox = () => {
             const unreadRes = await axios.get(`${backendUrl}/chat/unread/${user._id}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            return { ...user, unreadCount: unreadRes.data.unreadCount || 0 };
+            return { ...user, unreadCount: unreadRes.data.unreadCount || 0, type: 'user' };
           } catch {
-            return { ...user, unreadCount: 0 };
+            return { ...user, unreadCount: 0, type: 'user' };
           }
         })
       );
+
       setUsersWithUnread(usersWithCounts);
+      setGroups(groupsData.map(group => ({ ...group, type: 'group' })));
     } catch (err) {
       console.error("Failed to fetch users:", err);
       toast.error("Failed to load chat users");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableStudents = async (filters = {}) => {
+    try {
+      console.log("Fetching students with filters:", filters);
+      
+      // First, get all students
+      const allRes = await axios.get(`${backendUrl}/chat/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const allUsers = allRes.data.users || allRes.data;
+      let students = allUsers.filter(user => 
+        user.userRole === 'student' && user._id !== currentUserId
+      );
+
+      // Apply filters flexibly - only filter by what's provided
+      let appliedFilters = [];
+      
+      if (filters.branch) {
+        students = students.filter(user => user.branch === filters.branch);
+        appliedFilters.push(`Branch: ${filters.branch}`);
+      }
+      
+      if (filters.semester) {
+        students = students.filter(user => user.semester === parseInt(filters.semester));
+        appliedFilters.push(`Semester: ${filters.semester}`);
+      }
+      
+      if (filters.section) {
+        students = students.filter(user => user.section === filters.section);
+        appliedFilters.push(`Section: ${filters.section}`);
+      }
+      
+      if (filters.batchYear) {
+        students = students.filter(user => user.batchYear === parseInt(filters.batchYear));
+        appliedFilters.push(`Batch: ${filters.batchYear}`);
+      }
+
+      console.log(`Found ${students.length} students after applying ${appliedFilters.length} filters`);
+      
+      // Show appropriate message
+      if (appliedFilters.length === 0) {
+        toast.info(`Showing all ${students.length} students`);
+      } else {
+        const filterText = appliedFilters.join(', ');
+        if (students.length === 0) {
+          toast.info(`No students found for: ${filterText}`);
+        } else {
+          toast.success(`Found ${students.length} students for: ${filterText}`);
+        }
+      }
+      
+      setAvailableStudents(students);
+      
+    } catch (err) {
+      console.error("Failed to fetch students:", err);
+      toast.error("Failed to load students");
+      setAvailableStudents([]);
     }
   };
 
@@ -83,7 +169,6 @@ const ChatBox = () => {
       });
       fetchUsersWithUnread();
       
-      // Update local messages status
       setMessages(prev => prev.map(msg => 
         msg.senderId === targetUserId 
           ? { ...msg, status: 'read', readAt: new Date() }
@@ -97,32 +182,152 @@ const ChatBox = () => {
 
   const handleUserSelect = (user) => {
     setReceiverId(user._id);
+    setGroupId(null);
     setSelectedUser(user);
+    setSelectedGroup(null);
+    setChatType('individual');
     if (user.unreadCount > 0) markAsRead(user._id);
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
   };
 
-  // Filter users based on search query
-  const filteredUsers = usersWithUnread.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleGroupSelect = (group) => {
+    setGroupId(group._id);
+    setReceiverId(null);
+    setSelectedGroup(group);
+    setSelectedUser(null);
+    setChatType('group');
+    
+    // Join socket room for this group
+    socket.emit("joinGroup", group._id);
+    
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const createGroup = async () => {
+    try {
+      if (!newGroup.name.trim()) {
+        toast.error("Group name is required");
+        return;
+      }
+
+      if (newGroup.memberIds.length === 0) {
+        toast.error("Please select at least one member");
+        return;
+      }
+
+      console.log(newGroup) ; 
+      console.log(token) ; 
+
+      const res = await axios.post(`${backendUrl}/groups`, newGroup, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+
+      if (res.data.success) {
+        toast.success("Group created successfully");
+        setShowCreateGroupModal(false);
+        setNewGroup({
+          name: "",
+          description: "",
+          memberIds: [],
+          isClassGroup: false,
+          classInfo: { branch: "", semester: "", section: "", batchYear: new Date().getFullYear() }
+        });
+        fetchUsersWithUnread();
+        
+        // Notify members via socket
+        socket.emit("groupCreated", res.data.group);
+      }
+    } catch (err) {
+      console.error("Failed to create group:", err);
+      toast.error("Failed to create group");
+    }
+  };
+
+  const handleClassGroupChange = (e) => {
+    const isClassGroup = e.target.checked;
+    setNewGroup(prev => ({
+      ...prev,
+      isClassGroup,
+      memberIds: [] // Clear selected members when switching type
+    }));
+
+    if (isClassGroup && currentUserRole === 'teacher') {
+      // Pre-fill class info based on teacher's details
+      setNewGroup(prev => ({
+        ...prev,
+        classInfo: {
+          branch: user.branch || "",
+          semester: "",
+          section: "",
+          batchYear: new Date().getFullYear()
+        }
+      }));
+    }
+  };
+
+  const handleClassInfoChange = (field, value) => {
+    setNewGroup(prev => ({
+      ...prev,
+      classInfo: {
+        ...prev.classInfo,
+        [field]: value
+      }
+    }));
+
+    // Auto-fetch students whenever any class info changes
+    if (field && value) {
+      fetchAvailableStudents({
+        branch: newGroup.classInfo.branch,
+        semester: newGroup.classInfo.semester,
+        section: newGroup.classInfo.section,
+        batchYear: newGroup.classInfo.batchYear
+      });
+    }
+  };
+
+  const toggleMemberSelection = (memberId) => {
+    setNewGroup(prev => ({
+      ...prev,
+      memberIds: prev.memberIds.includes(memberId)
+        ? prev.memberIds.filter(id => id !== memberId)
+        : [...prev.memberIds, memberId]
+    }));
+  };
+
+  const selectAllStudents = () => {
+    setNewGroup(prev => ({
+      ...prev,
+      memberIds: availableStudents.map(student => student._id)
+    }));
+  };
+
+  // Filter users and groups based on search query
+  const filteredContacts = [...usersWithUnread, ...groups].filter(contact =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Update URL when receiver changes
+  // Update URL when receiver/group changes
   useEffect(() => {
     if (receiverId) {
       setSearchParams({ user: receiverId });
+    } else if (groupId) {
+      setSearchParams({ group: groupId });
     } else {
       setSearchParams({});
     }
-  }, [receiverId, setSearchParams]);
+  }, [receiverId, groupId, setSearchParams]);
 
-  // Fetch messages when receiver changes
+  // Fetch messages when receiver/group changes
   useEffect(() => {
-    if (!receiverId || !currentUserId) {
+    if (!receiverId && !groupId) {
       setMessages([]);
       setSelectedUser(null);
+      setSelectedGroup(null);
       return;
     }
 
@@ -130,18 +335,32 @@ const ChatBox = () => {
       setLoading(true);
       setMessages([]);
       try {
-        const { data } = await axios.get(
-          `${backendUrl}/getMessages/${receiverId}`,
-          {
-            params: { currentUserId },
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-        setMessages(data || []);
-        
-        // Set selected user info
-        const user = usersWithUnread.find(u => u._id === receiverId);
-        if (user) setSelectedUser(user);
+        if (receiverId) {
+          // Individual chat
+          const { data } = await axios.get(
+            `${backendUrl}/getMessages/${receiverId}`,
+            {
+              params: { currentUserId },
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+          setMessages(data || []);
+          
+          const user = usersWithUnread.find(u => u._id === receiverId);
+          if (user) setSelectedUser(user);
+        } else if (groupId) {
+          // Group chat
+          const { data } = await axios.get(
+            `${backendUrl}/groups/${groupId}/messages`,
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+          setMessages(data.messages || []);
+          
+          const group = groups.find(g => g._id === groupId);
+          if (group) setSelectedGroup(group);
+        }
       } catch (err) {
         console.error("Error fetching messages:", err);
         toast.error("Failed to load messages");
@@ -151,7 +370,7 @@ const ChatBox = () => {
     };
 
     fetchMessages();
-  }, [receiverId, currentUserId, token]);
+  }, [receiverId, groupId, currentUserId, token]);
 
   // Socket effects
   useEffect(() => {
@@ -161,10 +380,20 @@ const ChatBox = () => {
 
       socket.off("receiveMessage");
       socket.on("receiveMessage", (data) => {
-        setMessages((prev) => [...prev, data]);
+        if (receiverId === data.senderId) {
+          setMessages((prev) => [...prev, data]);
+        }
         if (data.receiverId === currentUserId && data.senderId !== receiverId) {
           fetchUsersWithUnread();
         }
+      });
+
+      socket.off("receiveGroupMessage");
+      socket.on("receiveGroupMessage", (data) => {
+        if (groupId === data.groupId) {
+          setMessages((prev) => [...prev, data]);
+        }
+        fetchUsersWithUnread();
       });
 
       socket.off("getOnlineUsers");
@@ -177,6 +406,11 @@ const ChatBox = () => {
         setMessages(prev => prev.filter(msg => msg._id !== messageId));
       });
 
+      socket.off("groupMessageDeleted");
+      socket.on("groupMessageDeleted", (messageId) => {
+        setMessages(prev => prev.filter(msg => msg._id !== messageId));
+      });
+
       socket.off("messageStatusUpdate");
       socket.on("messageStatusUpdate", ({ messageId, status, deliveredAt, readAt }) => {
         setMessages(prev => prev.map(msg => 
@@ -185,15 +419,43 @@ const ChatBox = () => {
             : msg
         ));
       });
+
+      socket.off("newGroup");
+      socket.on("newGroup", (group) => {
+        fetchUsersWithUnread();
+        toast.success(`Added to group: ${group.name}`);
+      });
+
+      socket.off("addedToGroup");
+      socket.on("addedToGroup", (groupId) => {
+        fetchUsersWithUnread();
+        toast.success("You've been added to a new group");
+      });
+
+      socket.off("removedFromGroup");
+      socket.on("removedFromGroup", (groupId) => {
+        fetchUsersWithUnread();
+        if (groupId === groupId) {
+          setGroupId(null);
+          setSelectedGroup(null);
+          setMessages([]);
+        }
+        toast.info("You've been removed from a group");
+      });
     }
 
     return () => {
       socket.off("receiveMessage");
+      socket.off("receiveGroupMessage");
       socket.off("getOnlineUsers");
       socket.off("messageDeleted");
+      socket.off("groupMessageDeleted");
       socket.off("messageStatusUpdate");
+      socket.off("newGroup");
+      socket.off("addedToGroup");
+      socket.off("removedFromGroup");
     };
-  }, [currentUserId, receiverId]);
+  }, [currentUserId, receiverId, groupId]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -201,13 +463,20 @@ const ChatBox = () => {
 
   const handleDeleteMessage = async (messageId) => {
     try {
-      await axios.delete(`${backendUrl}/DeleteMsg/${messageId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setMessages(prev => prev.filter(msg => msg._id !== messageId));
-      socket.emit("deleteMessage", { messageId, receiverId });
-
+      if (chatType === 'individual') {
+        await axios.delete(`${backendUrl}/DeleteMsg/${messageId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessages(prev => prev.filter(msg => msg._id !== messageId));
+        socket.emit("deleteMessage", { messageId, receiverId });
+      } else {
+        // For group messages, you might want to add a separate endpoint
+        await axios.delete(`${backendUrl}/DeleteMsg/${messageId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessages(prev => prev.filter(msg => msg._id !== messageId));
+        socket.emit("deleteGroupMessage", { messageId, groupId });
+      }
       toast.success("Message deleted");
     } catch (error) {
       console.error("Error deleting message:", error);
@@ -216,12 +485,18 @@ const ChatBox = () => {
   };
 
   const handleSend = async () => {
-    if (isSending) return; // Prevent multiple sends
+    if (isSending) return;
     
     try {
       if (!message.trim() && !selectedFile) return;
-      if (!receiverId) {
+      
+      if (chatType === 'individual' && !receiverId) {
         toast.error("Please select a user to chat with.");
+        return;
+      }
+      
+      if (chatType === 'group' && !groupId) {
+        toast.error("Please select a group to chat in.");
         return;
       }
 
@@ -243,48 +518,91 @@ const ChatBox = () => {
 
         fileType = selectedFile.type;
 
-        const res = await axios.post(
-          `${backendUrl}/sendMessage/${receiverId}`,
-          { 
-            text: message,
-            senderId: currentUserId,
-            file: base64Data,
-            fileType
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        if (chatType === 'individual') {
+          const res = await axios.post(
+            `${backendUrl}/sendMessage/${receiverId}`,
+            { 
+              text: message,
+              senderId: currentUserId,
+              file: base64Data,
+              fileType
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
 
-        fileUrl = res.data.file;
-        const newMessage = {
-          ...res.data,
-          status: 'sent',
-          createdAt: new Date()
-        };
+          const newMessage = {
+            ...res.data,
+            status: 'sent',
+            createdAt: new Date()
+          };
 
-        socket.emit("sendMessage", newMessage);
-        setMessages((prev) => [...prev, newMessage]);
+          socket.emit("sendMessage", newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+        } else {
+          const res = await axios.post(
+            `${backendUrl}/groups/${groupId}/messages`,
+            { 
+              text: message,
+              file: base64Data,
+              fileType
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+
+          const newMessage = {
+            ...res.data.message,
+            status: 'sent',
+            createdAt: new Date()
+          };
+
+          socket.emit("sendGroupMessage", newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+        }
+
         setMessage("");
         setSelectedFile(null);
       } else {
-        const res = await axios.post(
-          `${backendUrl}/sendMessage/${receiverId}`,
-          { 
-            text: message,
-            senderId: currentUserId 
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        if (chatType === 'individual') {
+          const res = await axios.post(
+            `${backendUrl}/sendMessage/${receiverId}`,
+            { 
+              text: message,
+              senderId: currentUserId 
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
 
-        const newMessage = {
-          ...res.data,
-          status: 'sent',
-          createdAt: new Date()
-        };
+          const newMessage = {
+            ...res.data,
+            status: 'sent',
+            createdAt: new Date()
+          };
 
-        socket.emit("sendMessage", newMessage);
-        setMessages((prev) => [...prev, newMessage]);
+          socket.emit("sendMessage", newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+        } else {
+          const res = await axios.post(
+            `${backendUrl}/groups/${groupId}/messages`,
+            { 
+              text: message
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          const newMessage = {
+            ...res.data.message,
+            status: 'sent',
+            createdAt: new Date()
+          };
+
+          socket.emit("sendGroupMessage", newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+        }
+
         setMessage("");
       }
     } catch (error) {
@@ -339,7 +657,7 @@ const ChatBox = () => {
   };
 
   const renderMessageStatus = (message) => {
-    if (message.senderId !== currentUserId) return null;
+    if (chatType === 'group' || message.senderId !== currentUserId) return null;
 
     let statusIcon;
     let statusColor;
@@ -386,6 +704,10 @@ const ChatBox = () => {
     }
   };
 
+  const isUserAdmin = (group) => {
+    return group.admins.some(admin => admin._id === currentUserId);
+  };
+
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex">
       {/* Sidebar */}
@@ -427,7 +749,7 @@ const ChatBox = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search contacts..."
+                placeholder="Search contacts or groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -439,38 +761,66 @@ const ChatBox = () => {
           </div>
         )}
 
-        {/* Users List */}
+        {/* Create Group Button (Teachers only) */}
+        {isSidebarOpen && currentUserRole === 'teacher' && (
+          <div className="p-4 border-b border-gray-200">
+            <button
+              onClick={() => setShowCreateGroupModal(true)}
+              className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-2 px-4 rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Create Group</span>
+            </button>
+          </div>
+        )}
+
+        {/* Contacts List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
-            {isSidebarOpen && <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Contacts</h3>}
+            {isSidebarOpen && <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Chats</h3>}
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredUsers.map(user => (
+                {filteredContacts.map(contact => (
                   <div
-                    key={user._id}
-                    onClick={() => handleUserSelect(user)}
+                    key={contact._id}
+                    onClick={() => contact.type === 'user' ? handleUserSelect(contact) : handleGroupSelect(contact)}
                     className={`flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                      receiverId === user._id 
+                      (receiverId === contact._id || groupId === contact._id)
                         ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
                         : 'hover:bg-gray-50 border border-gray-100'
                     }`}
                   >
                     <div className="relative flex-shrink-0">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        receiverId === user._id ? 'bg-white/20' : 'bg-gradient-to-r from-blue-100 to-purple-100'
+                        (receiverId === contact._id || groupId === contact._id) 
+                          ? 'bg-white/20' 
+                          : contact.type === 'group' 
+                            ? 'bg-gradient-to-r from-green-100 to-blue-100' 
+                            : 'bg-gradient-to-r from-blue-100 to-purple-100'
                       }`}>
-                        <span className={`font-medium text-sm ${
-                          receiverId === user._id ? 'text-white' : 'text-blue-600'
-                        }`}>
-                          {user.name?.charAt(0)?.toUpperCase()}
-                        </span>
+                        {contact.type === 'group' ? (
+                          <svg className={`w-5 h-5 ${(receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        ) : (
+                          <span className={`font-medium text-sm ${
+                            (receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-blue-600'
+                          }`}>
+                            {contact.name?.charAt(0)?.toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                      {onlineUsers.includes(user._id) && (
+                      {contact.type === 'user' && onlineUsers.includes(contact._id) && (
                         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+                      )}
+                      {contact.type === 'group' && isUserAdmin(contact) && (
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-yellow-400 border-2 border-white rounded-full" title="Admin"></div>
                       )}
                     </div>
                     
@@ -478,32 +828,38 @@ const ChatBox = () => {
                       <div className="ml-3 flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className={`font-medium truncate ${
-                            receiverId === user._id ? 'text-white' : 'text-gray-800'
+                            (receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-gray-800'
                           }`}>
-                            {user.name}
+                            {contact.name}
+                            {contact.type === 'group' && (
+                              <span className="text-xs ml-1 opacity-75">({contact.members?.length})</span>
+                            )}
                           </p>
-                          {user.unreadCount > 0 && (
+                          {contact.unreadCount > 0 && (
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              receiverId === user._id 
+                              (receiverId === contact._id || groupId === contact._id) 
                                 ? 'bg-white text-blue-600' 
                                 : 'bg-red-500 text-white'
                             }`}>
-                              {user.unreadCount}
+                              {contact.unreadCount}
                             </span>
                           )}
                         </div>
                         <p className={`text-xs truncate ${
-                          receiverId === user._id ? 'text-blue-100' : 'text-gray-500'
+                          (receiverId === contact._id || groupId === contact._id) ? 'text-blue-100' : 'text-gray-500'
                         }`}>
-                          {onlineUsers.includes(user._id) ? 'Online' : 'Offline'}
+                          {contact.type === 'user' 
+                            ? (onlineUsers.includes(contact._id) ? 'Online' : 'Offline')
+                            : 'Group'
+                          }
                         </p>
                       </div>
                     )}
                   </div>
                 ))}
-                {filteredUsers.length === 0 && searchQuery && (
+                {filteredContacts.length === 0 && searchQuery && (
                   <div className="text-center py-8 text-gray-500">
-                    No contacts found matching "{searchQuery}"
+                    No contacts or groups found matching "{searchQuery}"
                   </div>
                 )}
               </div>
@@ -514,7 +870,7 @@ const ChatBox = () => {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {receiverId ? (
+        {receiverId || groupId ? (
           <>
             {/* Chat Header */}
             <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
@@ -529,22 +885,54 @@ const ChatBox = () => {
                     </svg>
                   </button>
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {selectedUser?.name?.charAt(0)?.toUpperCase()}
-                      </span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      chatType === 'group' 
+                        ? 'bg-gradient-to-r from-green-400 to-blue-500' 
+                        : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                    }`}>
+                      {chatType === 'group' ? (
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      ) : (
+                        <span className="text-white font-semibold text-sm">
+                          {selectedUser?.name?.charAt(0)?.toUpperCase()}
+                        </span>
+                      )}
                     </div>
                     <div>
-                      <h2 className="font-semibold text-gray-800">{selectedUser?.name}</h2>
+                      <h2 className="font-semibold text-gray-800">
+                        {chatType === 'group' ? selectedGroup?.name : selectedUser?.name}
+                        {chatType === 'group' && isUserAdmin(selectedGroup) && (
+                          <span className="text-xs text-yellow-600 ml-2" title="You are admin">👑</span>
+                        )}
+                      </h2>
                       <p className="text-sm text-gray-500 flex items-center">
-                        <span className={`w-2 h-2 rounded-full mr-2 ${
-                          onlineUsers.includes(receiverId) ? 'bg-green-400' : 'bg-gray-400'
-                        }`}></span>
-                        {onlineUsers.includes(receiverId) ? 'Online' : 'Offline'}
+                        {chatType === 'group' ? (
+                          <span>{selectedGroup?.members?.length} members</span>
+                        ) : (
+                          <>
+                            <span className={`w-2 h-2 rounded-full mr-2 ${
+                              onlineUsers.includes(receiverId) ? 'bg-green-400' : 'bg-gray-400'
+                            }`}></span>
+                            {onlineUsers.includes(receiverId) ? 'Online' : 'Offline'}
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
+                {chatType === 'group' && (
+                  <button
+                    onClick={() => setShowGroupDetailsModal(true)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Group Info"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -573,10 +961,28 @@ const ChatBox = () => {
                 ) : (
                   <div className="space-y-4">
                     {messages.map((msg, index) => (
-                      <div key={msg._id || index} className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`relative group max-w-xs lg:max-w-md ${msg.senderId === currentUserId ? 'ml-12' : 'mr-12'}`}>
+                      <div key={msg._id || index} className={`flex ${
+                        (chatType === 'individual' && msg.senderId === currentUserId) || 
+                        (chatType === 'group' && msg.senderId._id === currentUserId) 
+                          ? 'justify-end' 
+                          : 'justify-start'
+                      }`}>
+                        <div className={`relative group max-w-xs lg:max-w-md ${
+                          (chatType === 'individual' && msg.senderId === currentUserId) || 
+                          (chatType === 'group' && msg.senderId._id === currentUserId) 
+                            ? 'ml-12' 
+                            : 'mr-12'
+                        }`}>
+                          {/* Group message sender name */}
+                          {chatType === 'group' && msg.senderId._id !== currentUserId && (
+                            <p className="text-xs text-gray-500 mb-1 font-medium">
+                              {msg.senderId.name}
+                            </p>
+                          )}
+                          
                           <div className={`rounded-2xl px-4 py-3 shadow-sm ${
-                            msg.senderId === currentUserId 
+                            (chatType === 'individual' && msg.senderId === currentUserId) || 
+                            (chatType === 'group' && msg.senderId._id === currentUserId)
                               ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-none' 
                               : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                           }`}>
@@ -635,17 +1041,21 @@ const ChatBox = () => {
                             )}
                             
                             <div className={`flex items-center justify-end mt-2 space-x-2 ${
-                              msg.senderId === currentUserId ? 'text-blue-100' : 'text-gray-500'
+                              ((chatType === 'individual' && msg.senderId === currentUserId) || 
+                              (chatType === 'group' && msg.senderId._id === currentUserId)) 
+                                ? 'text-blue-100' 
+                                : 'text-gray-500'
                             }`}>
                               <span className="text-xs">
                                 {formatMessageTime(msg.createdAt)}
                               </span>
-                              {renderMessageStatus(msg)}
+                              {chatType === 'individual' && renderMessageStatus(msg)}
                             </div>
                           </div>
                           
-                          {/* Delete button */}
-                          {msg.senderId === currentUserId && (
+                          {/* Delete button (only for user's messages) */}
+                          {((chatType === 'individual' && msg.senderId === currentUserId) || 
+                            (chatType === 'group' && msg.senderId._id === currentUserId)) && (
                             <button
                               onClick={() => handleDeleteMessage(msg._id)}
                               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg hover:bg-red-600"
@@ -698,7 +1108,7 @@ const ChatBox = () => {
                       type="text"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Type a message..."
+                      placeholder={chatType === 'group' ? "Message the group..." : "Type a message..."}
                       className="w-full bg-transparent border-none outline-none text-gray-800 placeholder-gray-500 resize-none"
                       onKeyPress={handleKeyPress}
                       disabled={isSending}
@@ -757,7 +1167,7 @@ const ChatBox = () => {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Chat</h3>
-              <p className="text-gray-600 mb-6">Select a contact from the sidebar to start messaging</p>
+              <p className="text-gray-600 mb-6">Select a contact or group from the sidebar to start messaging</p>
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="md:hidden bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
@@ -768,6 +1178,272 @@ const ChatBox = () => {
           </div>
         )}
       </div>
+
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-800">Create New Group</h3>
+                <button
+                  onClick={() => setShowCreateGroupModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Group Name *</label>
+                <input
+                  type="text"
+                  value={newGroup.name}
+                  onChange={(e) => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter group name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={newGroup.description}
+                  onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter group description (optional)"
+                  rows="3"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="classGroup"
+                  checked={newGroup.isClassGroup}
+                  onChange={handleClassGroupChange}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="classGroup" className="text-sm font-medium text-gray-700">
+                  This is a class group
+                </label>
+              </div>
+
+              {newGroup.isClassGroup && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Branch</label>
+                    <input
+                      type="text"
+                      value={newGroup.classInfo.branch}
+                      onChange={(e) => handleClassInfoChange('branch', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., CSE"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                    <input
+                      type="number"
+                      value={newGroup.classInfo.semester}
+                      onChange={(e) => handleClassInfoChange('semester', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., 3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                    <input
+                      type="text"
+                      value={newGroup.classInfo.section}
+                      onChange={(e) => handleClassInfoChange('section', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., A"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Batch Year</label>
+                    <input
+                      type="number"
+                      value={newGroup.classInfo.batchYear}
+                      onChange={(e) => handleClassInfoChange('batchYear', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., 2024"
+                    />
+                  </div>
+
+                  {/* UPDATED BUTTON */}
+                  <div className="col-span-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Load with whatever filters are currently filled (can be partial)
+                        fetchAvailableStudents({
+                          branch: newGroup.classInfo.branch,
+                          semester: newGroup.classInfo.semester,
+                          section: newGroup.classInfo.section,
+                          batchYear: newGroup.classInfo.batchYear
+                        });
+                      }}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Load Students
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Select Members *</label>
+                  {newGroup.isClassGroup && availableStudents.length > 0 && (
+                    <button
+                      onClick={selectAllStudents}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                  )}
+                </div>
+                
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg">
+                  {newGroup.isClassGroup && availableStudents.length > 0 ? (
+                    availableStudents.map(student => (
+                      <div key={student._id} className="flex items-center p-3 border-b border-gray-200 hover:bg-gray-50">
+                        <input
+                          type="checkbox"
+                          checked={newGroup.memberIds.includes(student._id)}
+                          onChange={() => toggleMemberSelection(student._id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <div className="ml-3 flex-1">
+                          <p className="text-sm font-medium text-gray-800">{student.name}</p>
+                          <p className="text-xs text-gray-500">{student.email} • {student.regno}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      {newGroup.isClassGroup 
+                        ? "Fill in class details to see students" 
+                        : "Select members individually from your contacts"}
+                    </div>
+                  )}
+                </div>
+                
+                {newGroup.memberIds.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {newGroup.memberIds.length} member(s) selected
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreateGroupModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGroup}
+                disabled={!newGroup.name.trim() || newGroup.memberIds.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Details Modal */}
+      {showGroupDetailsModal && selectedGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-800">Group Info</h3>
+                <button
+                  onClick={() => setShowGroupDetailsModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-800">{selectedGroup.name}</h4>
+                {selectedGroup.description && (
+                  <p className="text-gray-600 mt-1">{selectedGroup.description}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-2">
+                  Created by {selectedGroup.createdBy?.name}
+                </p>
+                {selectedGroup.isClassGroup && selectedGroup.classInfo && (
+                  <p className="text-sm text-gray-500">
+                    {selectedGroup.classInfo.branch} - Sem {selectedGroup.classInfo.semester} - Section {selectedGroup.classInfo.section}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 mb-3">
+                  Members ({selectedGroup.members?.length})
+                </h5>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {selectedGroup.members?.map(member => (
+                    <div key={member._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 text-xs font-medium">
+                            {member.name?.charAt(0)?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {member.name}
+                            {selectedGroup.admins.some(admin => admin._id === member._id) && (
+                              <span className="text-xs text-yellow-600 ml-1" title="Admin">👑</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 capitalize">{member.userRole}</p>
+                        </div>
+                      </div>
+                      {onlineUsers.includes(member._id) && (
+                        <div className="w-2 h-2 bg-green-400 rounded-full" title="Online"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowGroupDetailsModal(false)}
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -71,14 +71,22 @@ const ChatBox = () => {
   const fetchUsersWithUnread = async () => {
     setLoading(true);
     try {
+      console.log("🔄 Fetching users and groups...");
       const res = await axios.get(`${backendUrl}/chat/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log("🔍 Full API Response:", res.data);
+      console.log("👥 Users data:", res.data.users);
+      console.log("👪 Groups data:", res.data.groups);
       
       const usersData = res.data.users || res.data;
       const others = usersData.filter(user => user._id !== currentUserId);
       const groupsData = res.data.groups || [];
 
+      console.log(`📊 Found ${others.length} users and ${groupsData.length} groups`);
+
+      // Get unread counts for users
       const usersWithCounts = await Promise.all(
         others.map(async (user) => {
           try {
@@ -92,10 +100,23 @@ const ChatBox = () => {
         })
       );
 
+      // Add groups with type information
+      const groupsWithType = groupsData.map(group => ({ 
+        ...group, 
+        type: 'group',
+        unreadCount: 0
+      }));
+
+      // ✅ CRITICAL FIX: Set both states properly
       setUsersWithUnread(usersWithCounts);
-      setGroups(groupsData.map(group => ({ ...group, type: 'group' })));
+      setGroups(groupsWithType);
+      
+      console.log("✅ Users set:", usersWithCounts.length);
+      console.log("✅ Groups set:", groupsWithType.length);
+      
     } catch (err) {
-      console.error("Failed to fetch users:", err);
+      console.error("❌ Failed to fetch users:", err);
+      console.error("📡 Error response:", err.response?.data);
       toast.error("Failed to load chat users");
     } finally {
       setLoading(false);
@@ -219,13 +240,13 @@ const ChatBox = () => {
         return;
       }
 
-      console.log(newGroup) ; 
-      console.log(token) ; 
+      console.log("📝 Creating group with data:", newGroup);
 
       const res = await axios.post(`${backendUrl}/groups`, newGroup, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      console.log("✅ Group creation response:", res.data);
 
       if (res.data.success) {
         toast.success("Group created successfully");
@@ -237,14 +258,32 @@ const ChatBox = () => {
           isClassGroup: false,
           classInfo: { branch: "", semester: "", section: "", batchYear: new Date().getFullYear() }
         });
-        fetchUsersWithUnread();
         
-        // Notify members via socket
+        // ✅ CRITICAL: Force refresh contacts list
+        console.log("🔄 Manually refreshing contacts list...");
+        await fetchUsersWithUnread();
+        
+        // ✅ Notify via socket
+        console.log("📢 Emitting groupCreated socket event");
         socket.emit("groupCreated", res.data.group);
+        
+      } else {
+        console.error("❌ Group creation failed - no success flag");
+        toast.error("Failed to create group - server error");
       }
     } catch (err) {
-      console.error("Failed to create group:", err);
-      toast.error("Failed to create group");
+      console.error("❌ Failed to create group:", err);
+      console.error("📡 Error response:", err.response?.data);
+      
+      if (err.response?.status === 401) {
+        toast.error("Authentication failed. Please log in again.");
+      } else if (err.response?.status === 403) {
+        toast.error("You don't have permission to create groups.");
+      } else if (err.response?.data?.error) {
+        toast.error(err.response.data.error);
+      } else {
+        toast.error("Failed to create group. Please try again.");
+      }
     }
   };
 
@@ -373,34 +412,63 @@ const ChatBox = () => {
   }, [receiverId, groupId, currentUserId, token]);
 
   // Socket effects
+  // Socket effects
+    // Socket effects
   useEffect(() => {
     if (currentUserId) {
       fetchUsersWithUnread();
       socket.emit("join", currentUserId);
 
+      // Individual message events
       socket.off("receiveMessage");
       socket.on("receiveMessage", (data) => {
+        console.log("📨 Received individual message:", data);
         if (receiverId === data.senderId) {
-          setMessages((prev) => [...prev, data]);
+          setMessages((prev) => {
+            // ✅ ADD DUPLICATE PREVENTION for individual messages too
+            const messageExists = prev.some(msg => msg._id === data._id);
+            if (messageExists) {
+              console.log("🔄 Individual message already exists, skipping duplicate");
+              return prev;
+            }
+            return [...prev, data];
+          });
         }
         if (data.receiverId === currentUserId && data.senderId !== receiverId) {
           fetchUsersWithUnread();
         }
       });
 
+      // ✅ UPDATED: Group message events with duplicate prevention
       socket.off("receiveGroupMessage");
       socket.on("receiveGroupMessage", (data) => {
-        if (groupId === data.groupId) {
-          setMessages((prev) => [...prev, data]);
-        }
+        console.log("📨 Received group message via socket:", data);
+        
+        // ✅ ADD DUPLICATE PREVENTION
+        setMessages((prev) => {
+          // Check if message already exists
+          const messageExists = prev.some(msg => msg._id === data._id);
+          if (messageExists) {
+            console.log("🔄 Message already exists, skipping duplicate");
+            return prev;
+          }
+          
+          // Add new message
+          console.log("✅ Adding new group message to state");
+          return [...prev, data];
+        });
+        
+        // Refresh unread counts
         fetchUsersWithUnread();
       });
 
+      // Online users
       socket.off("getOnlineUsers");
       socket.on("getOnlineUsers", (onlineUsersList) => {
         setOnlineUsers(onlineUsersList);
       });
 
+      // Message deletion events
       socket.off("messageDeleted");
       socket.on("messageDeleted", (messageId) => {
         setMessages(prev => prev.filter(msg => msg._id !== messageId));
@@ -411,6 +479,7 @@ const ChatBox = () => {
         setMessages(prev => prev.filter(msg => msg._id !== messageId));
       });
 
+      // Message status updates
       socket.off("messageStatusUpdate");
       socket.on("messageStatusUpdate", ({ messageId, status, deliveredAt, readAt }) => {
         setMessages(prev => prev.map(msg => 
@@ -420,20 +489,24 @@ const ChatBox = () => {
         ));
       });
 
+      // Group management events
       socket.off("newGroup");
       socket.on("newGroup", (group) => {
+        console.log("🆕 New group received via socket:", group);
         fetchUsersWithUnread();
         toast.success(`Added to group: ${group.name}`);
       });
 
       socket.off("addedToGroup");
       socket.on("addedToGroup", (groupId) => {
+        console.log("➕ Added to group via socket:", groupId);
         fetchUsersWithUnread();
         toast.success("You've been added to a new group");
       });
 
       socket.off("removedFromGroup");
       socket.on("removedFromGroup", (groupId) => {
+        console.log("➖ Removed from group via socket:", groupId);
         fetchUsersWithUnread();
         if (groupId === groupId) {
           setGroupId(null);
@@ -442,9 +515,18 @@ const ChatBox = () => {
         }
         toast.info("You've been removed from a group");
       });
+
+      // Group created event (for creator)
+      socket.off("groupCreatedSuccess");
+      socket.on("groupCreatedSuccess", (group) => {
+        console.log("✅ Group created successfully via socket:", group);
+        fetchUsersWithUnread();
+        toast.success(`Group "${group.name}" created successfully`);
+      });
     }
 
     return () => {
+      // Cleanup all socket listeners
       socket.off("receiveMessage");
       socket.off("receiveGroupMessage");
       socket.off("getOnlineUsers");
@@ -454,6 +536,7 @@ const ChatBox = () => {
       socket.off("newGroup");
       socket.off("addedToGroup");
       socket.off("removedFromGroup");
+      socket.off("groupCreatedSuccess");
     };
   }, [currentUserId, receiverId, groupId]);
 
@@ -519,6 +602,7 @@ const ChatBox = () => {
         fileType = selectedFile.type;
 
         if (chatType === 'individual') {
+          // Individual chat file handling (keep as is)
           const res = await axios.post(
             `${backendUrl}/sendMessage/${receiverId}`,
             { 
@@ -541,6 +625,7 @@ const ChatBox = () => {
           socket.emit("sendMessage", newMessage);
           setMessages((prev) => [...prev, newMessage]);
         } else {
+          // Group chat file handling
           const res = await axios.post(
             `${backendUrl}/groups/${groupId}/messages`,
             { 
@@ -553,20 +638,25 @@ const ChatBox = () => {
             }
           );
 
-          const newMessage = {
-            ...res.data.message,
-            status: 'sent',
-            createdAt: new Date()
-          };
+          console.log("✅ Group message sent, response:", res.data);
 
-          socket.emit("sendGroupMessage", newMessage);
-          setMessages((prev) => [...prev, newMessage]);
+          // ✅ JUST emit socket event - DON'T manually add to state
+          socket.emit("sendGroupMessage", res.data.message);
+          
+          // ❌ REMOVE THIS: Don't manually add to messages state
+          // const newMessage = {
+          //   ...res.data.message,
+          //   status: 'sent',
+          //   createdAt: new Date()
+          // };
+          // setMessages((prev) => [...prev, newMessage]);
         }
 
         setMessage("");
         setSelectedFile(null);
       } else {
         if (chatType === 'individual') {
+          // Individual text message (keep as is)
           const res = await axios.post(
             `${backendUrl}/sendMessage/${receiverId}`,
             { 
@@ -585,6 +675,7 @@ const ChatBox = () => {
           socket.emit("sendMessage", newMessage);
           setMessages((prev) => [...prev, newMessage]);
         } else {
+          // Group text message
           const res = await axios.post(
             `${backendUrl}/groups/${groupId}/messages`,
             { 
@@ -593,14 +684,18 @@ const ChatBox = () => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
-          const newMessage = {
-            ...res.data.message,
-            status: 'sent',
-            createdAt: new Date()
-          };
+          console.log("✅ Group message sent, response:", res.data);
 
-          socket.emit("sendGroupMessage", newMessage);
-          setMessages((prev) => [...prev, newMessage]);
+          // ✅ JUST emit socket event - DON'T manually add to state
+          socket.emit("sendGroupMessage", res.data.message);
+          
+          // ❌ REMOVE THIS: Don't manually add to messages state
+          // const newMessage = {
+          //   ...res.data.message,
+          //   status: 'sent',
+          //   createdAt: new Date()
+          // };
+          // setMessages((prev) => [...prev, newMessage]);
         }
 
         setMessage("");
@@ -612,7 +707,6 @@ const ChatBox = () => {
       setIsSending(false);
     }
   };
-
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     

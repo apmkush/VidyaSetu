@@ -9,7 +9,7 @@ import { getReceiverSocketId, io } from "../config/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
-    const UserId = req.user._id;
+    const UserId = req.user.id;
     const filteredUsers = await UserModel.find({ _id: { $ne: UserId } }).select("-password");
 
     // Get user's groups
@@ -17,6 +17,8 @@ export const getUsersForSidebar = async (req, res) => {
       .populate('members', 'name email profilePic userRole')
       .populate('admins', 'name email profilePic')
       .sort({ updatedAt: -1 });
+
+    console.log("groups are " , userGroups) ; 
 
     res.status(200).json({
       users: filteredUsers,

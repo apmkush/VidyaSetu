@@ -46,7 +46,7 @@ export const createGroup = async (req, res) => {
 // Get all groups for a user
 export const getUserGroups = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const groups = await Group.find({ members: userId })
       .populate('members', 'name email profilePic userRole')
@@ -93,7 +93,7 @@ export const sendGroupMessage = async (req, res) => {
   try {
     const { groupId } = req.params;
     const { text, file, fileType } = req.body;
-    const senderId = req.user._id;
+    const senderId = req.user.id; // ✅ CHANGED: req.user._id to req.user.id
 
     // Check if user is member of the group
     const group = await Group.findById(groupId);
@@ -166,7 +166,7 @@ export const sendGroupMessage = async (req, res) => {
 export const getGroupMessages = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.id; // ✅ CHANGED: req.user._id to req.user.id
 
     // Check if user is member of the group
     const group = await Group.findById(groupId);
@@ -193,7 +193,7 @@ export const addMembersToGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
     const { memberIds } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id; // ✅ CHANGED: req.user._id to req.user.id
 
     const group = await Group.findById(groupId);
     if (!group) {
@@ -228,7 +228,7 @@ export const addMembersToGroup = async (req, res) => {
 export const removeMemberFromGroup = async (req, res) => {
   try {
     const { groupId, memberId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.id; // ✅ CHANGED: req.user._id to req.user.id
 
     const group = await Group.findById(groupId);
     if (!group) {

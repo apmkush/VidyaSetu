@@ -153,9 +153,11 @@ io.on("connection", (socket) => {
 
   // Group created - notify members
   socket.on("groupCreated", (group) => {
+    console.log("📢 Group created, notifying members:", group.members);
     group.members.forEach(memberId => {
       const memberSocketId = getReceiverSocketId(memberId.toString());
       if (memberSocketId) {
+        console.log(`📨 Notifying member ${memberId} about new group`);
         io.to(memberSocketId).emit("newGroup", group);
       }
     });

@@ -30,6 +30,9 @@ const ChatBox = () => {
   const [isSending, setIsSending] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showGroupDetailsModal, setShowGroupDetailsModal] = useState(false);
+  const [showGroupAvatarModal, setShowGroupAvatarModal] = useState(false);
+  const [groupAvatarFile, setGroupAvatarFile] = useState(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [newGroup, setNewGroup] = useState({
     name: "",
     description: "",
@@ -188,7 +191,6 @@ const ChatBox = () => {
       await axios.post(`${backendUrl}/chat/markRead/${targetUserId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchUsersWithUnread();
       
       setMessages(prev => prev.map(msg => 
         msg.senderId === targetUserId 
@@ -284,6 +286,49 @@ const ChatBox = () => {
       } else {
         toast.error("Failed to create group. Please try again.");
       }
+    }
+  };
+
+  const updateGroupAvatar = async () => {
+    if (!groupAvatarFile || !selectedGroup) return;
+    
+    try {
+      setIsUploadingAvatar(true);
+      
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(groupAvatarFile);
+      });
+
+      const formData = new FormData();
+      formData.append('avatar', groupAvatarFile);
+
+      // Update group with new avatar
+      const res = await axios.put(
+        `${backendUrl}/groups/${selectedGroup._id}/avatar`,
+        formData,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          } 
+        }
+      );
+
+      if (res.data.success) {
+        toast.success("Group avatar updated successfully");
+        setSelectedGroup(prev => ({ ...prev, avatar: res.data.group.avatar }));
+        setShowGroupAvatarModal(false);
+        setGroupAvatarFile(null);
+        fetchUsersWithUnread(); // Refresh to show new avatar in sidebar
+      }
+    } catch (error) {
+      console.error("Error updating group avatar:", error);
+      toast.error("Failed to update group avatar");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -411,9 +456,7 @@ const ChatBox = () => {
     fetchMessages();
   }, [receiverId, groupId, currentUserId, token]);
 
-  // Socket effects
-  // Socket effects
-    // Socket effects
+  // Socket effects - OPTIMIZED VERSION
   useEffect(() => {
     if (currentUserId) {
       fetchUsersWithUnread();
@@ -425,7 +468,6 @@ const ChatBox = () => {
         console.log("📨 Received individual message:", data);
         if (receiverId === data.senderId) {
           setMessages((prev) => {
-            // ✅ ADD DUPLICATE PREVENTION for individual messages too
             const messageExists = prev.some(msg => msg._id === data._id);
             if (messageExists) {
               console.log("🔄 Individual message already exists, skipping duplicate");
@@ -434,32 +476,22 @@ const ChatBox = () => {
             return [...prev, data];
           });
         }
-        if (data.receiverId === currentUserId && data.senderId !== receiverId) {
-          fetchUsersWithUnread();
-        }
       });
 
-      // ✅ UPDATED: Group message events with duplicate prevention
+      // ✅ OPTIMIZED: Group message events
       socket.off("receiveGroupMessage");
       socket.on("receiveGroupMessage", (data) => {
         console.log("📨 Received group message via socket:", data);
         
-        // ✅ ADD DUPLICATE PREVENTION
         setMessages((prev) => {
-          // Check if message already exists
           const messageExists = prev.some(msg => msg._id === data._id);
           if (messageExists) {
             console.log("🔄 Message already exists, skipping duplicate");
             return prev;
           }
-          
-          // Add new message
           console.log("✅ Adding new group message to state");
           return [...prev, data];
         });
-        
-        // Refresh unread counts
-        fetchUsersWithUnread();
       });
 
       // Online users
@@ -489,25 +521,25 @@ const ChatBox = () => {
         ));
       });
 
-      // Group management events
+      // Group management events - KEEP these as they're important
       socket.off("newGroup");
       socket.on("newGroup", (group) => {
         console.log("🆕 New group received via socket:", group);
-        fetchUsersWithUnread();
+        fetchUsersWithUnread(); // ✅ KEEP: Need to refresh when added to new group
         toast.success(`Added to group: ${group.name}`);
       });
 
       socket.off("addedToGroup");
       socket.on("addedToGroup", (groupId) => {
         console.log("➕ Added to group via socket:", groupId);
-        fetchUsersWithUnread();
+        fetchUsersWithUnread(); // ✅ KEEP: Need to refresh when added to group
         toast.success("You've been added to a new group");
       });
 
       socket.off("removedFromGroup");
       socket.on("removedFromGroup", (groupId) => {
         console.log("➖ Removed from group via socket:", groupId);
-        fetchUsersWithUnread();
+        fetchUsersWithUnread(); // ✅ KEEP: Need to refresh when removed from group
         if (groupId === groupId) {
           setGroupId(null);
           setSelectedGroup(null);
@@ -520,7 +552,7 @@ const ChatBox = () => {
       socket.off("groupCreatedSuccess");
       socket.on("groupCreatedSuccess", (group) => {
         console.log("✅ Group created successfully via socket:", group);
-        fetchUsersWithUnread();
+        fetchUsersWithUnread(); // ✅ KEEP: Need to refresh when creator creates group
         toast.success(`Group "${group.name}" created successfully`);
       });
     }
@@ -642,14 +674,6 @@ const ChatBox = () => {
 
           // ✅ JUST emit socket event - DON'T manually add to state
           socket.emit("sendGroupMessage", res.data.message);
-          
-          // ❌ REMOVE THIS: Don't manually add to messages state
-          // const newMessage = {
-          //   ...res.data.message,
-          //   status: 'sent',
-          //   createdAt: new Date()
-          // };
-          // setMessages((prev) => [...prev, newMessage]);
         }
 
         setMessage("");
@@ -688,14 +712,6 @@ const ChatBox = () => {
 
           // ✅ JUST emit socket event - DON'T manually add to state
           socket.emit("sendGroupMessage", res.data.message);
-          
-          // ❌ REMOVE THIS: Don't manually add to messages state
-          // const newMessage = {
-          //   ...res.data.message,
-          //   status: 'sent',
-          //   createdAt: new Date()
-          // };
-          // setMessages((prev) => [...prev, newMessage]);
         }
 
         setMessage("");
@@ -707,6 +723,7 @@ const ChatBox = () => {
       setIsSending(false);
     }
   };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     
@@ -810,10 +827,18 @@ const ChatBox = () => {
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {isSidebarOpen && (
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
-                  {user?.name?.charAt(0)?.toUpperCase()}
-                </span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                {user?.profilePic ? (
+                  <img 
+                    src={user.profilePic} 
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-sm">
+                    {user?.name?.charAt(0)?.toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <h2 className="font-semibold text-gray-800">{user?.name}</h2>
@@ -891,23 +916,40 @@ const ChatBox = () => {
                     }`}
                   >
                     <div className="relative flex-shrink-0">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${
                         (receiverId === contact._id || groupId === contact._id) 
                           ? 'bg-white/20' 
                           : contact.type === 'group' 
                             ? 'bg-gradient-to-r from-green-100 to-blue-100' 
                             : 'bg-gradient-to-r from-blue-100 to-purple-100'
                       }`}>
+                        {/* ✅ UPDATED: Profile Image with Fallback */}
                         {contact.type === 'group' ? (
-                          <svg className={`w-5 h-5 ${(receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
+                          contact.avatar ? (
+                            <img 
+                              src={contact.avatar} 
+                              alt={contact.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <svg className={`w-5 h-5 ${(receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                          )
                         ) : (
-                          <span className={`font-medium text-sm ${
-                            (receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-blue-600'
-                          }`}>
-                            {contact.name?.charAt(0)?.toUpperCase()}
-                          </span>
+                          contact.profilePic ? (
+                            <img 
+                              src={contact.profilePic} 
+                              alt={contact.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className={`font-medium text-sm ${
+                              (receiverId === contact._id || groupId === contact._id) ? 'text-white' : 'text-blue-600'
+                            }`}>
+                              {contact.name?.charAt(0)?.toUpperCase()}
+                            </span>
+                          )
                         )}
                       </div>
                       {contact.type === 'user' && onlineUsers.includes(contact._id) && (
@@ -979,19 +1021,35 @@ const ChatBox = () => {
                     </svg>
                   </button>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${
                       chatType === 'group' 
                         ? 'bg-gradient-to-r from-green-400 to-blue-500' 
                         : 'bg-gradient-to-r from-blue-500 to-purple-600'
                     }`}>
                       {chatType === 'group' ? (
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+                        selectedGroup?.avatar ? (
+                          <img 
+                            src={selectedGroup.avatar} 
+                            alt={selectedGroup.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        )
                       ) : (
-                        <span className="text-white font-semibold text-sm">
-                          {selectedUser?.name?.charAt(0)?.toUpperCase()}
-                        </span>
+                        selectedUser?.profilePic ? (
+                          <img 
+                            src={selectedUser.profilePic} 
+                            alt={selectedUser.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-sm">
+                            {selectedUser?.name?.charAt(0)?.toUpperCase()}
+                          </span>
+                        )
                       )}
                     </div>
                     <div>
@@ -1476,10 +1534,35 @@ const ChatBox = () => {
 
             <div className="p-6">
               <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                {/* ✅ UPDATED: Group Avatar with Edit Option for Admins */}
+                <div className="relative inline-block">
+                  <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 border-4 border-white shadow-lg">
+                    {selectedGroup.avatar ? (
+                      <img 
+                        src={selectedGroup.avatar} 
+                        alt={selectedGroup.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {isUserAdmin(selectedGroup) && (
+                    <button
+                      onClick={() => setShowGroupAvatarModal(true)}
+                      className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+                      title="Change group avatar"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <h4 className="text-lg font-semibold text-gray-800">{selectedGroup.name}</h4>
                 {selectedGroup.description && (
@@ -1503,10 +1586,18 @@ const ChatBox = () => {
                   {selectedGroup.members?.map(member => (
                     <div key={member._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 text-xs font-medium">
-                            {member.name?.charAt(0)?.toUpperCase()}
-                          </span>
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center overflow-hidden">
+                          {member.profilePic ? (
+                            <img 
+                              src={member.profilePic} 
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-blue-600 text-xs font-medium">
+                              {member.name?.charAt(0)?.toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-800">
@@ -1534,6 +1625,80 @@ const ChatBox = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Avatar Update Modal */}
+      {showGroupAvatarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-800">Change Group Avatar</h3>
+                <button
+                  onClick={() => setShowGroupAvatarModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="text-center mb-6">
+                {groupAvatarFile ? (
+                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-white shadow-lg">
+                    <img 
+                      src={URL.createObjectURL(groupAvatarFile)} 
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 border-4 border-dashed border-gray-300">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+                <p className="text-sm text-gray-600">Select a new avatar for the group</p>
+              </div>
+
+              <div className="flex flex-col space-y-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setGroupAvatarFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowGroupAvatarModal(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={updateGroupAvatar}
+                    disabled={!groupAvatarFile || isUploadingAvatar}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </div>
+                    ) : (
+                      "Update Avatar"
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

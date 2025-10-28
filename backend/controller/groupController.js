@@ -292,3 +292,70 @@ export const getStudentsForClassGroup = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch students" });
   }
 };
+
+// ✅ NEW: Update group avatar
+export const updateGroupAvatar = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user.id;
+
+    // Check if user is admin of the group
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (!group.admins.includes(userId)) {
+      return res.status(403).json({ error: "Only admins can update group avatar" });
+    }
+
+    let avatarUrl = group.avatar; // Keep existing avatar if no new file
+
+    if (req.file) {
+      // Upload new avatar to Cloudinary
+      const uploadOptions = {
+        folder: 'group_avatars',
+        use_filename: true,
+        transformation: [
+          { width: 200, height: 200, crop: 'fill' },
+          { quality: 'auto' },
+          { format: 'webp' }
+        ]
+      };
+
+      const uploadResponse = await cloudinary.uploader.upload(
+        req.file.path,
+        uploadOptions
+      );
+      
+      avatarUrl = uploadResponse.secure_url;
+
+      // Delete old avatar from Cloudinary if it exists
+      if (group.avatar) {
+        try {
+          const oldAvatarPublicId = group.avatar.split('/').pop().split('.')[0];
+          await cloudinary.uploader.destroy(`group_avatars/${oldAvatarPublicId}`);
+        } catch (cloudinaryError) {
+          console.error("Error deleting old avatar:", cloudinaryError);
+        }
+      }
+    }
+
+    // Update group with new avatar
+    const updatedGroup = await Group.findByIdAndUpdate(
+      groupId,
+      { avatar: avatarUrl },
+      { new: true }
+    ).populate('members', 'name email profilePic userRole')
+     .populate('admins', 'name email profilePic')
+     .populate('createdBy', 'name email');
+
+    res.status(200).json({
+      success: true,
+      group: updatedGroup
+    });
+  } catch (error) {
+    console.error("Error updating group avatar:", error);
+    res.status(500).json({ error: "Failed to update group avatar" });
+  }
+};

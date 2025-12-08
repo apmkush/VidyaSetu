@@ -7,16 +7,16 @@ const { Types: { ObjectId } } = mongoose;
 import cloudinary from "../config/cloudinary.js";
 import { getReceiverSocketId, io } from "../config/socket.js";
 
-export const getUsersForSidebar = async (req, res) => {
-  try {
-    const UserId = req.user.id;
-    const filteredUsers = await UserModel.find({ _id: { $ne: UserId } }).select("-password");
+  export const getUsersForSidebar = async (req, res) => {
+    try {
+      const UserId = req.user.id;
+      const filteredUsers = await UserModel.find({ _id: { $ne: UserId } }).select("-password");
 
-    // Get user's groups
-    const userGroups = await Group.find({ members: UserId })
-      .populate('members', 'name email profilePic userRole')
-      .populate('admins', 'name email profilePic')
-      .sort({ updatedAt: -1 });
+      // Get user's groups
+      const userGroups = await Group.find({ members: UserId })
+        .populate('members', 'name email profilePic userRole')
+        .populate('admins', 'name email profilePic')
+        .sort({ updatedAt: -1 });
 
     console.log("groups are " , userGroups) ; 
 

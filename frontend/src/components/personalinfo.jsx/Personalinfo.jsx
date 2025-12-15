@@ -5,7 +5,8 @@ import{backendUrl}from '../../service/url';
 import { useSelector } from 'react-redux';
 
 const PersonalInfo = () => {
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImageFile, setProfileImageFile] = useState(null); // New file selected
+  const [profileImageUrl, setProfileImageUrl] = useState(null); // URL from backend
   const [bio, setBio] = useState('');
   const [details, setDetails] = useState({
     fullName: '',
@@ -49,9 +50,9 @@ const PersonalInfo = () => {
           });
 
           if (user.profilePic) {
-            setProfileImage(user.profilePic);
+            setProfileImageUrl(user.profilePic);
           } else if (user.profileImageURL) {
-            setProfileImage(user.profileImageURL);
+            setProfileImageUrl(user.profileImageURL);
           }
         }
       } catch (error) {
@@ -89,7 +90,9 @@ const PersonalInfo = () => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    setProfileImage(file);
+    if (file) {
+      setProfileImageFile(file);
+    }
   };
 
   const handleDetailChange = (e) => {
@@ -106,8 +109,9 @@ const PersonalInfo = () => {
     e.preventDefault();
     const formData = new FormData();
     
-    if (profileImage && profileImage instanceof File) {
-      formData.append('profileImage', profileImage);
+    // Only append image if a new file was selected
+    if (profileImageFile && profileImageFile instanceof File) {
+      formData.append('profileImage', profileImageFile);
     }
     
     formData.append('bio', bio);
@@ -134,6 +138,7 @@ const PersonalInfo = () => {
 
       if (response.data.success) {
         setIsEditing(false);
+        setProfileImageFile(null); // Clear the file after successful upload
         alert('Profile updated successfully!');
         // Refresh profile data
         const refreshResponse = await axios.get(`${backendUrl}/user/profile`, {
@@ -151,6 +156,11 @@ const PersonalInfo = () => {
             email: user.email || '',
             address: user.address?.street || '',
           });
+          
+          // Update the URL from backend
+          if (user.profilePic) {
+            setProfileImageUrl(user.profilePic);
+          }
         }
       }
     } catch (error) {
@@ -181,9 +191,15 @@ const PersonalInfo = () => {
         {/* Profile Image and Info Section */}
         <div className="flex items-center space-x-6 mb-8">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-600 relative">
-            {profileImage ? (
+            {profileImageFile ? (
               <img
-                src={URL.createObjectURL(profileImage)}
+                src={URL.createObjectURL(profileImageFile)}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : profileImageUrl ? (
+              <img
+                src={profileImageUrl}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

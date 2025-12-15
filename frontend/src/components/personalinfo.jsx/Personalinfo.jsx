@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BsLinkedin, BsGithub, BsTwitter } from 'react-icons/bs';
 import axios from 'axios';
 import{backendUrl}from '../../service/url';
+import { useSelector } from 'react-redux';
 
 const PersonalInfo = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -18,18 +19,73 @@ const PersonalInfo = () => {
     github: '',
     twitter: '',
   });
-  const [isEditing, setIsEditing] = useState(false); // Track if in edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const authToken = useSelector(state => state.auth.token);
 
+  // Fetch user profile on component mount
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('userData'));
-    if (userData) {
-      setDetails((prev) => ({
-        ...prev,
-        fullName: userData.name,
-        email: userData.email,
-      }));
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await axios.get(`${backendUrl}/user/profile`, {
+          headers: {
+            Authorization: authToken || localStorage.getItem('authToken')
+          }
+        });
+
+        if (response.data.success) {
+          const user = response.data.user;
+          setDetails({
+            fullName: user.name || '',
+            age: user.dateOfBirth ? new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear() : '',
+            contact: user.phone || '',
+            email: user.email || '',
+            address: user.address?.street || '',
+          });
+
+          if (user.profilePic) {
+            setProfileImage(user.profilePic);
+          } else if (user.profileImageURL) {
+            setProfileImage(user.profileImageURL);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setError('Failed to load profile. Please try again.');
+        // Fallback to localStorage
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (userData) {
+          setDetails((prev) => ({
+            ...prev,
+            fullName: userData.name || '',
+            email: userData.email || '',
+          }));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (authToken || localStorage.getItem('authToken')) {
+      fetchUserProfile();
+    } else {
+      setLoading(false);
+      // Fallback to localStorage if no auth token
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      if (userData) {
+        setDetails((prev) => ({
+          ...prev,
+          fullName: userData.name || '',
+          email: userData.email || '',
+        }));
+      }
     }
-  }, []);
+  }, [authToken]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -49,29 +105,78 @@ const PersonalInfo = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append('profileImage', profileImage);
+    
+    if (profileImage && profileImage instanceof File) {
+      formData.append('profileImage', profileImage);
+    }
+    
     formData.append('bio', bio);
-    Object.keys(details).forEach((key) => {
-      formData.append(key, details[key]);
-    });
+    formData.append('fullName', details.fullName);
+    formData.append('age', details.age);
+    formData.append('contact', details.contact);
+    formData.append('email', details.email);
+    formData.append('address', details.address);
+    
     Object.keys(socialLinks).forEach((key) => {
       formData.append(key, socialLinks[key]);
     });
 
     try {
-      await axios.post(`${backendUrl}/user/profile`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      setSaving(true);
+      setError(null);
+      
+      const response = await axios.post(`${backendUrl}/user/profile`, formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: authToken || localStorage.getItem('authToken')
+        },
       });
-      setIsEditing(false); // Exit edit mode after saving
-      alert('Profile updated successfully!');
+
+      if (response.data.success) {
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+        // Refresh profile data
+        const refreshResponse = await axios.get(`${backendUrl}/user/profile`, {
+          headers: {
+            Authorization: authToken || localStorage.getItem('authToken')
+          }
+        });
+        
+        if (refreshResponse.data.success) {
+          const user = refreshResponse.data.user;
+          setDetails({
+            fullName: user.name || '',
+            age: user.dateOfBirth ? new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear() : '',
+            contact: user.phone || '',
+            email: user.email || '',
+            address: user.address?.street || '',
+          });
+        }
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
+      setError('Failed to update profile. Please try again.');
       alert('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-12">
+      {loading && (
+        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="max-w-5xl mx-auto mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+      
+      {!loading && (
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8">
         {/* Profile Image and Info Section */}
         <div className="flex items-center space-x-6 mb-8">
@@ -273,13 +378,19 @@ const PersonalInfo = () => {
           <div className="flex justify-center mt-8">
             <button
               onClick={handleSubmit}
-              className="py-3 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300"
+              disabled={saving}
+              className={`py-3 px-6 rounded-md transition duration-300 ${
+                saving 
+                  ? 'bg-gray-400 text-white cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              Save Changes
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

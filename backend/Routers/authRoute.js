@@ -2,7 +2,7 @@ import { Router } from "express";
 const router = Router();
 import { body } from "express-validator";
 import {authMiddleware} from '../middlewares/authMiddleware.js';
-import { login, signup, verifyotp, sendotp, resetPassword,updateMode,getTheme,googleLogin } from "../controller/authController.js";
+import { login, signup, verifyotp, sendotp, resetPassword, updateMode, getTheme, googleLogin, getUserProfile, updateUserProfile } from "../controller/authController.js";
 import cors from "cors";
 import { updateAssignment } from "../controller/assignmetController.js";
 
@@ -25,5 +25,7 @@ router.post("/reset-password", resetPassword);
 router.get("/get-theme",authMiddleware, getTheme);
 router.post("/update-theme",authMiddleware, updateMode);
 router.get("/google-login", googleLogin);
+router.get("/user/profile", authMiddleware, getUserProfile);
+router.post("/user/profile", authMiddleware, updateUserProfile);
 
 export default router;

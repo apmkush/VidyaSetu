@@ -346,3 +346,86 @@ export const googleLogin = async (req, res) =>{
       return res.status(401).json({ success: false, message: "Invalid or expired token" });
   }
 }
+
+// Get user profile information
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await UserModel.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        address: user.address,
+        profilePic: user.profilePic,
+        profileImageURL: user.profileImageURL,
+        userRole: user.userRole,
+        course: user.course,
+        branch: user.branch,
+        semester: user.semester,
+        section: user.section,
+        batchYear: user.batchYear
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Update user profile information
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { fullName, age, contact, email, address, bio, linkedin, github, twitter } = req.body;
+    
+    // Find user and update
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Update fields
+    if (fullName) user.name = fullName;
+    if (contact) user.phone = contact;
+    if (email) user.email = email;
+    if (address) {
+      user.address = { ...user.address, ...address };
+    }
+
+    // Handle profile image upload
+    if (req.file) {
+      user.profilePic = req.file.path || req.file.filename;
+    }
+
+    // Save user
+    await user.save();
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        profilePic: user.profilePic
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return res.status(500).json({ success: false, message: "Failed to update profile" });
+  }
+}

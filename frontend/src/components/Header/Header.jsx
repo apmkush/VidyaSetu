@@ -38,25 +38,6 @@ function Navbar() {
         {/* Navigation Links */}
         <nav className={`flex-1 flex justify-center ${isAuthenticated  ? 'space-x-12' : 'space-x-10'} lg:space-x-16`}>
           
-          {/* Dashboard Section */}
-          <div 
-            className="relative group"
-            onMouseEnter={() => handleMouseEnter('dashboard')}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="flex items-center text-gray-600 dark:text-gray-300 font-semibold hover:cursor-pointer text-lg">
-              <FaTachometerAlt className="mr-1" /> Dashboard
-            </div>
-            {openDropdown === 'dashboard' && (
-              <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
-                <Link to="/dashboard/overview" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Overview</Link>
-                <Link to="/dashboard/activities" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Recent Activities</Link>
-                <Link to="/growth" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Progress Tracking</Link>
-                <Link to="/dashboard/tasks" className="block px-4 py-2 hover:bg-blue-200 dark:hover:bg-blue-600 rounded">Upcoming Tasks</Link>
-              </div>
-            )}
-          </div>
-
           {/* Planner Section */}
           <div 
             className="relative group"
@@ -88,7 +69,6 @@ function Navbar() {
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/resultSubmission" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Submit Result</Link>
                 <Link to="/resultView" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">View Result</Link>
-                <Link to="/progress/achievements" className="block px-4 py-2 hover:bg-purple-200 dark:hover:bg-purple-600 rounded">Achievements</Link>
               </div>
             )}
           </div>
@@ -105,7 +85,6 @@ function Navbar() {
             {openDropdown === 'rewards' && (
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/achievements" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Achievements</Link>
-                <Link to="/rewards/badges" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Badges</Link>
                 <Link to="/leaderboard" className="block px-4 py-2 hover:bg-yellow-200 dark:hover:bg-yellow-600 rounded">Leaderboard</Link>
               </div>
             )}
@@ -115,6 +94,13 @@ function Navbar() {
           <div className="flex items-center text-gray-600 dark:text-gray-300 font-semibold hover:cursor-pointer text-lg">
             <Link to="/TimeTable" className="flex items-center">
               <FaClock className="mr-1" /> Timetable
+            </Link>
+          </div>
+
+          {/* Chat Section */}
+          <div className="flex items-center text-gray-600 dark:text-gray-300 font-semibold hover:cursor-pointer text-lg">
+            <Link to="/chat" className="flex items-center">
+              💬 Chat
             </Link>
           </div>
 
@@ -131,7 +117,6 @@ function Navbar() {
               <div className="absolute transition-all duration-300 transform opacity-100 mt-0.2 w-48 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg py-2 z-10">
                 <Link to="/Personalinfo" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Personal Info</Link>
                 <Link to="/Setting" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Settings</Link>
-                <Link to="/profile/goals" className="block px-4 py-2 hover:bg-pink-200 dark:hover:bg-pink-600 rounded">Academic Goals</Link>
               </div>
             )}
           </div>

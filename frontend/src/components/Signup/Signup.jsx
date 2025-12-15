@@ -11,10 +11,12 @@ const Signup = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('student');
 
   const branches = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'];
   const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
   const sections = ['A', 'B', 'C', 'D'];
+  const userRoles = ['student', 'teacher']; // Added teacher role
 
   const {
     register,
@@ -28,7 +30,13 @@ const Signup = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${backendUrl}/singup`, data, {
+      // Add userRole to the data
+      const formData = {
+        ...data,
+        userRole: selectedRole
+      };
+
+      const response = await axios.post(`${backendUrl}/singup`, formData, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -36,6 +44,7 @@ const Signup = () => {
         toast.success('Signup successful!');
         setShowSuccess(true);
         reset();
+        setSelectedRole('student'); // Reset to default
 
         setTimeout(() => {
           navigate('/login');
@@ -71,6 +80,25 @@ const Signup = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {errors.photo && <p className="text-red-500 text-sm">{errors.photo.message}</p>}
+          </div>
+
+          {/* User Role Selection - NEW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">I am a</label>
+            <div className="flex space-x-4 mt-2">
+              {userRoles.map((role) => (
+                <label key={role} className="flex items-center">
+                  <input
+                    type="radio"
+                    value={role}
+                    checked={selectedRole === role}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 capitalize">{role}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -126,72 +154,91 @@ const Signup = () => {
             {errors.regno && <p className="text-red-500 text-sm">{errors.regno.message}</p>}
           </div>
 
-          {/*  Batch Year  */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Batch Year</label>
-            <input
-              type="number"
-              {...register('batchYear', { 
-                required: 'Batch year is required', 
-                min: { value: 2000, message: 'Enter a valid year' }, 
-                max: { value: new Date().getFullYear() + 6, message: 'Enter a valid year' }
-              })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your batch year (e.g., 2025)"
-            />
-            {errors.batchYear && <p className="text-red-500 text-sm">{errors.batchYear.message}</p>}
-          </div>
+          {/* Conditional Fields - Show only for students */}
+          {selectedRole === 'student' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Batch Year</label>
+                <input
+                  type="number"
+                  {...register('batchYear', { 
+                    required: 'Batch year is required', 
+                    min: { value: 2000, message: 'Enter a valid year' }, 
+                    max: { value: new Date().getFullYear() + 6, message: 'Enter a valid year' }
+                  })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your batch year (e.g., 2025)"
+                />
+                {errors.batchYear && <p className="text-red-500 text-sm">{errors.batchYear.message}</p>}
+              </div>
 
-          {/* Branch Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Branch</label>
-            <select
-              {...register('branch', { required: 'Branch is required' })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Branch</option>
-              {branches.map((branch) => (
-                <option key={branch} value={branch}>
-                  {branch}
-                </option>
-              ))}
-            </select>
-            {errors.branch && <p className="text-red-500 text-sm">{errors.branch.message}</p>}
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Branch</label>
+                <select
+                  {...register('branch', { required: 'Branch is required' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch} value={branch}>
+                      {branch}
+                    </option>
+                  ))}
+                </select>
+                {errors.branch && <p className="text-red-500 text-sm">{errors.branch.message}</p>}
+              </div>
 
-          {/* Semester Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Semester</label>
-            <select
-              {...register('semester', { required: 'Semester is required' })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Semester</option>
-              {semesters.map((sem) => (
-                <option key={sem} value={sem}>
-                  {sem}
-                </option>
-              ))}
-            </select>
-            {errors.semester && <p className="text-red-500 text-sm">{errors.semester.message}</p>}
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Semester</label>
+                <select
+                  {...register('semester', { required: 'Semester is required' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Semester</option>
+                  {semesters.map((sem) => (
+                    <option key={sem} value={sem}>
+                      {sem}
+                    </option>
+                  ))}
+                </select>
+                {errors.semester && <p className="text-red-500 text-sm">{errors.semester.message}</p>}
+              </div>
 
-          {/* Section Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Section</label>
-            <select
-              {...register('section', { required: 'Section is required' })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Section</option>
-              {sections.map((sec) => (
-                <option key={sec} value={sec}>
-                  {sec}
-                </option>
-              ))}
-            </select>
-            {errors.section && <p className="text-red-500 text-sm">{errors.section.message}</p>}
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Section</label>
+                <select
+                  {...register('section', { required: 'Section is required' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Section</option>
+                  {sections.map((sec) => (
+                    <option key={sec} value={sec}>
+                      {sec}
+                    </option>
+                  ))}
+                </select>
+                {errors.section && <p className="text-red-500 text-sm">{errors.section.message}</p>}
+              </div>
+            </>
+          )}
+
+          {/* For teachers, only show branch (optional) */}
+          {selectedRole === 'teacher' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Branch (Optional)</label>
+              <select
+                {...register('branch')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Branch (Optional)</option>
+                {branches.map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>

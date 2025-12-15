@@ -7,6 +7,7 @@ import nodemailer from "nodemailer";
 import {UserModel} from "../models/user.js";
 import { generateToken, verifyToken, generateTempToken } from "../config/secret.js";
 import { OAuth2Client } from "google-auth-library";
+import cloudinary from "../config/cloudinary.js";
 
 export const login = async (req, res) => {
     const data={
@@ -387,8 +388,9 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { fullName, age, contact, email, address, bio, linkedin, github, twitter } = req.body;
-    
+    const { fullName, dateOfBirth, contact, email, gender, course, branch, semester, section, batchYear, address, bio } = req.body;
+    console.log("Update profile data:", req.body);
+    console.log("File received:", req.file ? req.file.filename : "No file");
     // Find user and update
     const user = await UserModel.findById(userId);
     
@@ -396,22 +398,72 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Update fields
-    if (fullName) user.name = fullName;
-    if (contact) user.phone = contact;
-    if (email) user.email = email;
-    if (address) {
-      user.address = { ...user.address, ...address };
+    // Update fields - use hasOwnProperty check to allow empty strings
+    if (fullName !== undefined) user.name = fullName;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+    if (contact !== undefined) user.phone = contact;
+    if (email !== undefined) user.email = email;
+    if (gender !== undefined) user.gender = gender;
+    if (course !== undefined) user.course = course;
+    if (branch !== undefined) user.branch = branch;
+    if (semester !== undefined) user.semester = semester;
+    if (section !== undefined) user.section = section;
+    if (batchYear !== undefined) user.batchYear = batchYear;
+    if (address !== undefined) {
+      user.address = { ...user.address, street: address };
     }
+    if (bio !== undefined) user.bio = bio;
 
-    // Handle profile image upload
+    // Handle profile image upload to Cloudinary
     if (req.file) {
-      user.profilePic = req.file.path || req.file.filename;
+      try {
+        // Store old profile pic URL BEFORE uploading new one
+        const oldProfilePic = user.profilePic;
+        
+        const uploadOptions = {
+          folder: 'user_profiles',
+          use_filename: true,
+          transformation: [
+            { width: 300, height: 300, crop: 'fill' },
+            { quality: 'auto' },
+            { format: 'webp' }
+          ]
+        };
+
+        const uploadResponse = await cloudinary.uploader.upload(
+          req.file.path,
+          uploadOptions
+        );
+        
+        console.log("Cloudinary upload response:", uploadResponse);
+        user.profilePic = uploadResponse.secure_url;
+
+        // Delete old profile pic from Cloudinary if it exists and is from Cloudinary
+        if (oldProfilePic && oldProfilePic.includes('cloudinary.com')) {
+          try {
+            // Extract public_id from the Cloudinary URL
+            // URL format: https://res.cloudinary.com/{cloud}/image/upload/v{version}/{folder}/{public_id}
+            const urlParts = oldProfilePic.split('/');
+            const filename = urlParts[urlParts.length - 1].split('.')[0]; // Get filename without extension
+            const publicId = `user_profiles/${filename}`;
+            
+            console.log("Deleting old image with public_id:", publicId);
+            const deleteResponse = await cloudinary.uploader.destroy(publicId);
+            console.log("Delete response:", deleteResponse);
+          } catch (cloudinaryError) {
+            console.error("Error deleting old profile picture:", cloudinaryError);
+            // Continue even if deletion fails
+          }
+        }
+      } catch (uploadError) {
+        console.error("Error uploading to Cloudinary:", uploadError);
+        return res.status(500).json({ success: false, message: "Failed to upload profile picture" });
+      }
     }
 
     // Save user
     await user.save();
-
+    console.log("User profile updated:", user);
     return res.status(200).json({ 
       success: true, 
       message: "Profile updated successfully",
@@ -420,8 +472,17 @@ export const updateUserProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        course: user.course,
+        branch: user.branch,
+        semester: user.semester,
+        section: user.section,
+        batchYear: user.batchYear,
         address: user.address,
-        profilePic: user.profilePic
+        profilePic: user.profilePic,
+        bio: user.bio,
+        userRole: user.userRole
       }
     });
   } catch (error) {

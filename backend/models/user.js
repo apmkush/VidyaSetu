@@ -84,6 +84,22 @@ const userSchema = new mongoose.Schema({
     profilePic: {
         type: String, // This will store the URL/path to the image
         default: '' // Default can be a placeholder image URL if needed
+    },
+    bio: {
+        type: String,
+        default: ''
+    },
+    linkedin: {
+        type: String,
+        default: ''
+    },
+    github: {
+        type: String,
+        default: ''
+    },
+    twitter: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true // This automatically adds createdAt and updatedAt fields

@@ -8,7 +8,7 @@ const TimetableView = () => {
     const [filters, setFilters] = useState({
         branch: '',
         section: '',
-        teacher: [],
+        teacher: '',
         room: ''
     });
     const [availableFilters, setAvailableFilters] = useState({
@@ -124,8 +124,8 @@ const TimetableView = () => {
                 {slot ? (
                     <>
                         <div className="font-semibold">{slot.subject}</div>
-                        <div>{slot.teacher.name}</div>
-                        <div>{slot.room}</div>
+                        <div>{slot.teacher?.name || 'No teacher assigned'}</div>
+                        <div>{typeof slot.room === 'object' ? slot.room?.name || slot.room?._id : slot.room || 'No room'}</div>
                     </>
                 ) : editMode ? (
                     <div className="text-gray-400">Click to add</div>
@@ -181,7 +181,7 @@ const TimetableView = () => {
                         <label className="block mb-2 font-medium">Teacher</label>
                         <select
                             name="teacher"
-                            value={filters.teacher._id}
+                            value={filters.teacher}
                             onChange={handleFilterChange}
                             className="w-full p-2 border rounded"
                         >
@@ -200,9 +200,11 @@ const TimetableView = () => {
                             className="w-full p-2 border rounded"
                         >
                             <option value="">All Rooms</option>
-                            {availableFilters.rooms.map(room => (
-                                <option key={room} value={room}>{room}</option>
-                            ))}
+                            {availableFilters.rooms.map(room => {
+                                const roomId = typeof room === 'object' ? room._id : room;
+                                const roomName = typeof room === 'object' ? room.name : room;
+                                return <option key={roomId} value={roomId}>{roomName}</option>;
+                            })}
                         </select>
                     </div>
                 </div>

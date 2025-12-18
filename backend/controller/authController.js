@@ -306,45 +306,96 @@ export const getTheme = async (req, res) => {
 
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 export const googleLogin = async (req, res) =>{
-  
   try {
-    const token = req.headers.authorization;
+    // Get token from either request body or authorization header
+    let token = req.body.token || req.headers.authorization;
+    
     if (!token) {
+        console.error("Token missing in request body or authorization header");
         return res.status(400).json({ success: false, message: "Token missing" });
     }
 
-    // Verify token using Google's API
-    // const googleResponse = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
-    // const { email, name, picture, sub } = googleResponse.data; // Extract user info
+    // Remove 'Bearer ' prefix if present in headers
+    if (token.startsWith('Bearer ')) {
+      token = token.replace('Bearer ', '');
+    }
 
+    console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID);
+    console.log("Token received (first 20 chars):", token.substring(0, 20) + "...");
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error("GOOGLE_CLIENT_ID not configured in environment");
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server configuration error: Google Client ID not set" 
+      });
+    }
+
+    // Verify token using Google's OAuth2Client
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID, // Must match the frontend client ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-    const { email, name, picture, sub } = ticket.getPayload();
-    // console.log(email);
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub } = payload;
+    
+    console.log("Google payload verified:", { email, name, sub });
 
     if (!email) {
-        return res.status(401).json({ success: false, message: "Invalid token" });
+        console.error("Email not found in Google token");
+        return res.status(401).json({ success: false, message: "Invalid token - no email" });
     }
 
     // Check if user exists in the database
     let user = await UserModel.findOne({ email });
 
-
     if (!user) {
-      return res.json({ success: false, message: "User not found" });
+      console.log("User not found for email:", email);
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found. Please sign up first with this email." 
+      });
     }
-    user.password=undefined;
-    const authToken = generateToken(user.id);
-    // Generate a new session token (optional, if you want to maintain session-based auth)
-    return res.json({ success: true, user:user,token:authToken });
+
+    console.log("User found:", user.name);
+    user.password = undefined;
+    const authToken = generateToken(user._id);
+    
+    return res.json({ 
+      success: true, 
+      user: user,
+      token: authToken,
+      message: "Login successful"
+    });
 
   } catch (error) {
-      console.error("Google Auth Error:", error);
-      return res.status(401).json({ success: false, message: "Invalid or expired token" });
+      console.error("Google Auth Error:", error.message);
+      console.error("Full error:", error);
+      
+      if (error.message.includes("Invalid value for audience")) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Invalid Google Client ID configuration. Contact administrator.",
+          error: error.message 
+        });
+      }
+      
+      if (error.message.includes("Token used too early")) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Token timing issue. Please try again.",
+          error: error.message
+        });
+      }
+      
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid or expired token. Please try logging in again.",
+        error: error.message
+      });
   }
 }
 

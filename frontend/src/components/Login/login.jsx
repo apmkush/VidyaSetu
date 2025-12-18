@@ -72,27 +72,43 @@ function Login() {
   };
 
   const handleLoginSuccess = async (credentialResponse) => {
-        const token = credentialResponse.credential;
-        // console.log(token);
-        const userDetails = jwtDecode(token);
-        // console.log(userDetails);
-        // Further token handling can be added here if necessary
-        const response = await axios.get(`${backendUrl}/google-login`,
-            {
-              headers: {
-                  Authorization: `${token}`, // Send JWT token in headers
-              },
-          });
+        try {
+          const token = credentialResponse.credential;
+          console.log("Google token received (first 20 chars):", token.substring(0, 20) + "...");
+          
+          const userDetails = jwtDecode(token);
+          console.log("User details from token:", userDetails);
+          
+          // Send token to backend via POST request
+          const response = await axios.post(`${backendUrl}/google-login`, 
+              { token: token },  // Send token in body
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token  // Also send in headers as backup
+                },
+              }
+          );
+          
           if(response.data.success){
-            console.log(response.data); 
-            dispatch(loginSuccess({ user: response.data.user, token: response.data.token }));
+            console.log("Google login successful:", response.data); 
+            dispatch(loginSuccess({ 
+              user: response.data.user, 
+              token: response.data.token 
+            }));
             DisplayMessage("Login successfully!!");
             setTimeout(() => {
                 navigate('/');
             }, 2000);
-          }else{
-            console.log(response.data.message);
+          } else {
+            console.error("Login failed:", response.data.message);
+            DisplayMessage(response.data.message || "Login failed", "error");
           }
+        } catch (error) {
+          console.error("Google login error:", error);
+          const errorMsg = error.response?.data?.message || error.message || "Google login failed";
+          DisplayMessage(errorMsg, "error");
+        }
     };
 
   return (

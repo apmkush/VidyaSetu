@@ -309,11 +309,14 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleLogin = async (req, res) =>{
   try {
-    // Get token from either request body or authorization header
-    let token = req.body.token || req.headers.authorization;
+    // Support token from multiple sources:
+    // 1. Request body (POST)
+    // 2. Authorization header (GET or POST)
+    // 3. Query parameter (GET)
+    let token = req.body?.token || req.headers.authorization || req.query.token;
     
     if (!token) {
-        console.error("Token missing in request body or authorization header");
+        console.error("Token missing in request body, authorization header, or query parameter");
         return res.status(400).json({ success: false, message: "Token missing" });
     }
 

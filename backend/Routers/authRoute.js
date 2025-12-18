@@ -46,8 +46,10 @@ router.post("/send-otp", sendotp);
 router.post("/reset-password", resetPassword);
 router.get("/get-theme",authMiddleware, getTheme);
 router.get("/update-theme",authMiddleware, updateMode);
-router.options("/google-login", cors()); // Handle CORS preflight
-router.post("/google-login", cors(), googleLogin); // Also add CORS to this specific route
+// Handle both GET and POST for google-login to support different clients
+router.options("/google-login", cors());
+router.get("/google-login", cors(), googleLogin); // Support GET for backward compatibility
+router.post("/google-login", cors(), googleLogin);
 router.get("/user/profile", authMiddleware, getUserProfile);
 router.post("/user/profile", authMiddleware, upload.single('profileImage'), updateUserProfile);
 

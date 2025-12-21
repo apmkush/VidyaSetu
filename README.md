@@ -2,7 +2,7 @@
 
 VidyaSetu is your all-in-one study companion designed to help students excel academically. Set goals, track progress, earn rewards, stay organized with personalized timetables, and collaborate with peers.
 
-Visit My Website - https://vidya-setu-one.vercel.app/
+Visit to my Website - https://vidya-setu-one.vercel.app/
 
 ## Features
 
